@@ -26,7 +26,7 @@ public class NMSImpl implements NMS {
 
     public void onEnable(Plugin plugin) {
     }
-    private Tag convert(NBTTag object) {
+    public Tag toNMS(NBTTag object) {
         if(object instanceof NBTByteArrayTag) {
             NBTByteArrayTag tag = (NBTByteArrayTag) object;
             return new ByteArrayTag(tag.get());
@@ -39,7 +39,7 @@ public class NMSImpl implements NMS {
             NBTCompoundTag tag = (NBTCompoundTag) object;
             CompoundTag ret = new CompoundTag();
             for (String key : tag.keySet()) {
-                ret.put(key, convert(tag.get(key)));
+                ret.put(key, toNMS(tag.get(key)));
             }
             return ret;
         }
@@ -65,7 +65,7 @@ public class NMSImpl implements NMS {
         if(object instanceof NBTListTag) {
             NBTListTag tag = (NBTListTag) object;
             ListTag ret = new ListTag();
-            ret.addAll(tag.get().stream().map(this::convert).collect(Collectors.toList()));
+            ret.addAll(tag.get().stream().map(this::toNMS).collect(Collectors.toList()));
             return ret;
         }
         if(object instanceof NBTLongArrayTag) {
@@ -86,7 +86,7 @@ public class NMSImpl implements NMS {
         }
         return null;
     }
-    private NBTTag convert(Tag object) {
+    public NBTTag fromNMS(Object object) {
         if (object instanceof ByteArrayTag) {
             ByteArrayTag tag = (ByteArrayTag) object;
             return new NBTByteArrayTag(tag.getAsByteArray());
@@ -99,7 +99,7 @@ public class NMSImpl implements NMS {
             CompoundTag tag = (CompoundTag) object;
             NBTCompoundTag ret = new NBTCompoundTag();
             for (String k : tag.getAllKeys()) {
-                ret.put(k, convert(tag.get(k)));
+                ret.put(k, fromNMS(tag.get(k)));
             }
             return ret;
         }
@@ -124,7 +124,7 @@ public class NMSImpl implements NMS {
         }
         if (object instanceof ListTag) {
             ListTag tag = (ListTag) object;
-            return new NBTListTag(tag.stream().map(this::convert).collect(Collectors.toList()));
+            return new NBTListTag(tag.stream().map(this::fromNMS).collect(Collectors.toList()));
         }
         if (object instanceof LongArrayTag) {
             LongArrayTag tag = (LongArrayTag) object;
@@ -146,30 +146,30 @@ public class NMSImpl implements NMS {
     }
 
     public NBTCompoundTag getItemNbt(ItemStack item) {
-        return (NBTCompoundTag) convert(CraftItemStack.asNMSCopy(item).save(new CompoundTag()));
+        return (NBTCompoundTag) fromNMS(CraftItemStack.asNMSCopy(item).save(new CompoundTag()));
     }
     public ItemStack getItem(NBTCompoundTag nbt) {
-        return CraftItemStack.asBukkitCopy(net.minecraft.world.item.ItemStack.of((CompoundTag) convert(nbt)));
+        return CraftItemStack.asBukkitCopy(net.minecraft.world.item.ItemStack.of((CompoundTag) toNMS(nbt)));
     }
     public NBTCompoundTag getEntityNbt(Entity entity) {
         CompoundTag tag = new CompoundTag();
         ((CraftEntity) entity).getHandle().save(tag);
-        return (NBTCompoundTag) convert(tag);
+        return (NBTCompoundTag) fromNMS(tag);
     }
     public void applyEntityNbt(Entity entity, NBTCompoundTag nbt) {
-        Optional<EntityType<?>> op = EntityType.by((CompoundTag) convert(nbt));
+        Optional<EntityType<?>> op = EntityType.by((CompoundTag) toNMS(nbt));
         if(!op.isPresent()) {
             // nbt does not represent a valid entity
             return;
         }
-        ((CraftEntity)entity).getHandle().load((CompoundTag) convert(nbt));
+        ((CraftEntity)entity).getHandle().load((CompoundTag) toNMS(nbt));
     }
     public NBTCompoundTag getTileEntityNbt(Location location) {
         LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
         BlockEntity entity = chunk.getBlockEntity(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
         if(entity instanceof SpawnerBlockEntity)
-            return (NBTCompoundTag) convert(((SpawnerBlockEntity)entity).getSpawner().save(new CompoundTag()));
-        return (NBTCompoundTag) convert(entity.saveWithFullMetadata());
+            return (NBTCompoundTag) fromNMS(((SpawnerBlockEntity)entity).getSpawner().save(new CompoundTag()));
+        return (NBTCompoundTag) fromNMS(entity.saveWithFullMetadata());
     }
     public void putTileEntityNbt(Location location, NBTCompoundTag nbt, boolean clean) {
         if(clean) {
@@ -177,24 +177,24 @@ public class NMSImpl implements NMS {
             BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
             BlockEntity entity = chunk.getBlockEntity(pos);
             if(entity instanceof SpawnerBlockEntity)
-                ((SpawnerBlockEntity)entity).getSpawner().load(chunk.getLevel(), pos, (CompoundTag) convert(nbt));
-            entity.load((CompoundTag) convert(nbt));
+                ((SpawnerBlockEntity)entity).getSpawner().load(chunk.getLevel(), pos, (CompoundTag) toNMS(nbt));
+            entity.load((CompoundTag) toNMS(nbt));
         } else {
             LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
-            chunk.setBlockEntityNbt((CompoundTag) convert(nbt));
+            chunk.setBlockEntityNbt((CompoundTag) toNMS(nbt));
         }
     }
     public NBTListTag getItemEnchantments(ItemStack item) {
-        return (NBTListTag) convert(CraftItemStack.asNMSCopy(item).getEnchantmentTags());
+        return (NBTListTag) fromNMS(CraftItemStack.asNMSCopy(item).getEnchantmentTags());
     }
     public NBTCompoundTag getBlockNbt(Location location) {
         BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        return (NBTCompoundTag) convert(NbtUtils.writeBlockState(
+        return (NBTCompoundTag) fromNMS(NbtUtils.writeBlockState(
                 ((CraftChunk)location.getChunk()).getHandle().getBlockState(pos)));
     }
     public NBTCompoundTag getFluidNbt(Location location) {
         BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        return (NBTCompoundTag) convert(NbtUtils.writeFluidState(
+        return (NBTCompoundTag) fromNMS(NbtUtils.writeFluidState(
                 ((CraftChunk)location.getChunk()).getHandle().getFluidState(pos)));
     }
 }

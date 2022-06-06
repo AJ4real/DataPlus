@@ -34,7 +34,7 @@ public class NMSImpl implements NMS {
     public void onEnable(Plugin plugin) {
     }
 
-    private NBTBase convert(NBTTag object) {
+    public NBTBase toNMS(NBTTag object) {
         if(object instanceof NBTByteArrayTag) {
             NBTByteArrayTag tag = (NBTByteArrayTag) object;
             return new NBTTagByteArray(tag.get());
@@ -47,7 +47,7 @@ public class NMSImpl implements NMS {
             NBTCompoundTag tag = (NBTCompoundTag) object;
             net.minecraft.server.v1_12_R1.NBTTagCompound ret = new net.minecraft.server.v1_12_R1.NBTTagCompound();
             for (String key : tag.keySet()) {
-                ret.set(key, convert(tag.get(key)));
+                ret.set(key, toNMS(tag.get(key)));
             }
             return ret;
         }
@@ -73,7 +73,7 @@ public class NMSImpl implements NMS {
         if(object instanceof NBTListTag) {
             NBTListTag tag = (NBTListTag) object;
             NBTTagList ret = new NBTTagList();
-            tag.get().forEach((t) -> ret.add(convert(t)));
+            tag.get().forEach((t) -> ret.add(toNMS(t)));
             return ret;
         }
         if(object instanceof NBTLongArrayTag) {
@@ -94,7 +94,7 @@ public class NMSImpl implements NMS {
         }
         return null;
     }
-    private NBTTag convert(NBTBase object) {
+    public NBTTag fromNMS(Object object) {
         if (object instanceof NBTTagByteArray) {
             NBTTagByteArray tag = (NBTTagByteArray) object;
             return new NBTByteArrayTag(tag.c());
@@ -107,7 +107,7 @@ public class NMSImpl implements NMS {
             NBTTagCompound tag = (NBTTagCompound) object;
             NBTCompoundTag ret = new NBTCompoundTag();
             for (String k : tag.c()) {
-                ret.put(k, convert(tag.get(k)));
+                ret.put(k, fromNMS(tag.get(k)));
             }
             return ret;
         }
@@ -134,7 +134,7 @@ public class NMSImpl implements NMS {
             NBTTagList tag = (NBTTagList) object;
             NBTListTag ret = new NBTListTag();
             for (int i = 0; i < tag.size(); i++) {
-                ret.get().add(convert(tag.get(i)));
+                ret.get().add(fromNMS(tag.get(i)));
             }
             return ret;
         }
@@ -162,26 +162,26 @@ public class NMSImpl implements NMS {
     }
 
     public NBTCompoundTag getItemNbt(ItemStack item) {
-        return (NBTCompoundTag) convert(CraftItemStack.asNMSCopy(item).save(new NBTTagCompound()));
+        return (NBTCompoundTag) fromNMS(CraftItemStack.asNMSCopy(item).save(new NBTTagCompound()));
     }
     public ItemStack getItem(NBTCompoundTag nbt) {
-        return CraftItemStack.asBukkitCopy(new net.minecraft.server.v1_12_R1.ItemStack((NBTTagCompound) convert(nbt)));
+        return CraftItemStack.asBukkitCopy(new net.minecraft.server.v1_12_R1.ItemStack((NBTTagCompound) toNMS(nbt)));
     }
     public NBTCompoundTag getEntityNbt(Entity entity) {
         NBTTagCompound tag = new NBTTagCompound();
         ((CraftEntity) entity).getHandle().save(tag);
-        return (NBTCompoundTag) convert(tag);
+        return (NBTCompoundTag) fromNMS(tag);
     }
     public void applyEntityNbt(Entity entity, NBTCompoundTag nbt) {
-        ((CraftEntity)entity).getHandle().f((NBTTagCompound) convert(nbt));
+        ((CraftEntity)entity).getHandle().f((NBTTagCompound) toNMS(nbt));
     }
     public NBTCompoundTag getTileEntityNbt(Location location) {
         Chunk chunk = ((CraftChunk)location.getChunk()).getHandle();
         BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         TileEntity entity = chunk.tileEntities.get(pos);
         if(entity instanceof TileEntityMobSpawner)
-            return (NBTCompoundTag) convert(((TileEntityMobSpawner)entity).getSpawner().b(new NBTTagCompound()));
-        return (NBTCompoundTag) convert(entity.save(new NBTTagCompound()));
+            return (NBTCompoundTag) fromNMS(((TileEntityMobSpawner)entity).getSpawner().b(new NBTTagCompound()));
+        return (NBTCompoundTag) fromNMS(entity.save(new NBTTagCompound()));
     }
     public void putTileEntityNbt(Location location, NBTCompoundTag nbt, boolean clean) {
         Chunk chunk = ((CraftChunk)location.getChunk()).getHandle();
@@ -189,10 +189,10 @@ public class NMSImpl implements NMS {
         if(clean) {
             TileEntity entity = chunk.tileEntities.get(pos);
             if(entity instanceof TileEntityMobSpawner)
-                ((TileEntityMobSpawner)entity).getSpawner().a((NBTTagCompound) convert(nbt));
-            entity.load((NBTTagCompound) convert(nbt));
+                ((TileEntityMobSpawner)entity).getSpawner().a((NBTTagCompound) toNMS(nbt));
+            entity.load((NBTTagCompound) toNMS(nbt));
         } else {
-            chunk.tileEntities.get(pos).load((NBTTagCompound) convert(nbt));
+            chunk.tileEntities.get(pos).load((NBTTagCompound) toNMS(nbt));
         }
     }
 }
