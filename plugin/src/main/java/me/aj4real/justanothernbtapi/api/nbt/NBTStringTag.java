@@ -4,6 +4,8 @@
 
 package me.aj4real.justanothernbtapi.api.nbt;
 
+import me.aj4real.justanothernbtapi.api.FriendlyByteBuf;
+
 import java.util.stream.IntStream;
 
 public class NBTStringTag implements NBTTag, Comparable<String>, CharSequence {
@@ -12,6 +14,16 @@ public class NBTStringTag implements NBTTag, Comparable<String>, CharSequence {
 
     private NBTStringTag(String delegate) {
         this.delegate = delegate;
+    }
+
+    public void write(FriendlyByteBuf buf) {
+        buf.writeUtf(delegate);
+    }
+    public static NBTStringTag read(FriendlyByteBuf buf) {
+        return new NBTStringTag(buf.readUtf());
+    }
+    public byte getId() {
+        return 8;
     }
 
     public static NBTStringTag valueOf(String delegate) {

@@ -4,10 +4,47 @@
 
 package me.aj4real.justanothernbtapi.api.nbt;
 
+import me.aj4real.justanothernbtapi.api.FriendlyByteBuf;
+import me.aj4real.justanothernbtapi.api.NbtIo;
+import org.bukkit.Bukkit;
+
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 public class NBTCompoundTag extends HashMap<String, NBTTag> implements NBTTag {
+
+
+    public void write(FriendlyByteBuf buf) throws IOException {
+        Iterator it = this.keySet().iterator();
+        while(it.hasNext()) {
+            String key = (String)it.next();
+            NBTTag tag = this.get(it);
+            buf.writeByte(tag.getId());
+            if(tag.getId() != 0) {
+                buf.writeUtf(key);
+                tag.write(buf);
+            }
+        }
+        buf.writeByte(0);
+    }
+
+    public static NBTCompoundTag read(FriendlyByteBuf buf) {
+        NBTCompoundTag ret = new NBTCompoundTag();
+        while(buf.readByte() != 0) {
+            Bukkit.getConsoleSender().sendMessage("b: " + buf.readerIndex());
+            String name = buf.readUtf();
+            Bukkit.getConsoleSender().sendMessage("1: " + name);
+            NBTTag tag = NbtIo.parseNbt(buf, false);
+            ret.put(name, tag);
+        }
+        return ret;
+    }
+    public byte getId() {
+        return 10;
+    }
+
     public void putByteArray(String key, byte[] value) {
         put(key, new NBTByteArrayTag(value));
     }

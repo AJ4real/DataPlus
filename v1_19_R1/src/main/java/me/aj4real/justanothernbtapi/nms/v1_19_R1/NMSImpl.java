@@ -2,7 +2,7 @@
  Copyright (c) All Rights Reserved
  *********************************/
 
-package me.aj4real.justanothernbtapi.nms.v1_18_R1;
+package me.aj4real.justanothernbtapi.nms.v1_19_R1;
 
 import me.aj4real.justanothernbtapi.NBTAPI;
 import me.aj4real.justanothernbtapi.api.FriendlyByteBuf;
@@ -14,16 +14,15 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_18_R1.CraftChunk;
-import org.bukkit.craftbukkit.v1_18_R1.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_19_R1.CraftChunk;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 public class NMSImpl implements NBTAPI {
 
     public void onEnable(Plugin plugin) {
@@ -194,5 +193,18 @@ public class NMSImpl implements NBTAPI {
             LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
             chunk.setBlockEntityNbt((CompoundTag) toNMS(nbt));
         }
+    }
+    public NBTListTag getItemEnchantments(ItemStack item) {
+        return (NBTListTag) fromNMS(CraftItemStack.asNMSCopy(item).getEnchantmentTags());
+    }
+    public NBTCompoundTag getBlockNbt(Location location) {
+        BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return (NBTCompoundTag) fromNMS(NbtUtils.writeBlockState(
+                ((CraftChunk)location.getChunk()).getHandle().getBlockState(pos)));
+    }
+    public NBTCompoundTag getFluidNbt(Location location) {
+        BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return (NBTCompoundTag) fromNMS(NbtUtils.writeFluidState(
+                ((CraftChunk)location.getChunk()).getHandle().getFluidState(pos)));
     }
 }

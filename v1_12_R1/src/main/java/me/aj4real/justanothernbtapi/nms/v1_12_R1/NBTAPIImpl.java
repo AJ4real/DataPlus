@@ -2,21 +2,45 @@
  Copyright (c) All Rights Reserved
  *********************************/
 
-package me.aj4real.justanothernbtapi.nms.v1_13_R2; import me.aj4real.justanothernbtapi.NMS;
+package me.aj4real.justanothernbtapi.nms.v1_12_R1; import me.aj4real.justanothernbtapi.NBTAPI;
+import me.aj4real.justanothernbtapi.api.FriendlyByteBuf;
 import me.aj4real.justanothernbtapi.api.nbt.*;
-import net.minecraft.server.v1_13_R2.*;
+import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_13_R2.CraftChunk;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_13_R2.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_12_R1.CraftChunk;
+import org.bukkit.craftbukkit.v1_12_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
-import java.util.stream.Collectors;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 
-public class NMSImpl implements NMS {
+public class NBTAPIImpl implements NBTAPI {
+    private static final Field b;
+    private static NBTTagEnd end;
+    static {
+        b = NBTTagLongArray.class.getDeclaredFields()[0];
+        b.setAccessible(true);
+        Constructor<?> c = NBTTagEnd.class.getDeclaredConstructors()[0];
+        c.setAccessible(true);
+        try {
+            end = (NBTTagEnd) c.newInstance(null);
+        } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
     public void onEnable(Plugin plugin) {
+    }
+
+    public void writeNbt(FriendlyByteBuf buf, NBTCompoundTag nbt) {
+        new PacketDataSerializer(buf).a((NBTTagCompound) toNMS(nbt));
+    }
+
+    public NBTCompoundTag readNbt(FriendlyByteBuf buf) {
+        return (NBTCompoundTag) fromNMS(new PacketDataSerializer(buf).j());
     }
 
     public NBTBase toNMS(NBTTag object) {
@@ -30,7 +54,7 @@ public class NMSImpl implements NMS {
         }
         if(object instanceof NBTCompoundTag) {
             NBTCompoundTag tag = (NBTCompoundTag) object;
-            net.minecraft.server.v1_13_R2.NBTTagCompound ret = new net.minecraft.server.v1_13_R2.NBTTagCompound();
+            net.minecraft.server.v1_12_R1.NBTTagCompound ret = new net.minecraft.server.v1_12_R1.NBTTagCompound();
             for (String key : tag.keySet()) {
                 ret.set(key, toNMS(tag.get(key)));
             }
@@ -41,7 +65,7 @@ public class NMSImpl implements NMS {
             return new NBTTagDouble(tag.get());
         }
         if(object instanceof NBTEndTag) {
-            return new NBTTagEnd();
+            return end;
         }
         if(object instanceof NBTFloatTag) {
             NBTFloatTag tag = (NBTFloatTag) object;
@@ -58,7 +82,7 @@ public class NMSImpl implements NMS {
         if(object instanceof NBTListTag) {
             NBTListTag tag = (NBTListTag) object;
             NBTTagList ret = new NBTTagList();
-            ret.addAll(tag.get().stream().map(this::toNMS).collect(Collectors.toList()));
+            tag.forEach((t) -> ret.add(toNMS(t)));
             return ret;
         }
         if(object instanceof NBTLongArrayTag) {
@@ -86,12 +110,12 @@ public class NMSImpl implements NMS {
         }
         if (object instanceof NBTTagByte) {
             NBTTagByte tag = (NBTTagByte) object;
-            return NBTByteTag.valueOf(tag.asByte());
+            return NBTByteTag.valueOf(tag.g());
         }
         if (object instanceof NBTTagCompound) {
             NBTTagCompound tag = (NBTTagCompound) object;
             NBTCompoundTag ret = new NBTCompoundTag();
-            for (String k : tag.getKeys()) {
+            for (String k : tag.c()) {
                 ret.put(k, fromNMS(tag.get(k)));
             }
             return ret;
@@ -105,7 +129,7 @@ public class NMSImpl implements NMS {
         }
         if (object instanceof NBTTagFloat) {
             NBTTagFloat tag = (NBTTagFloat) object;
-            return new NBTFloatTag(tag.asFloat());
+            return new NBTFloatTag(tag.d());
         }
         if (object instanceof NBTTagIntArray) {
             NBTTagIntArray tag = (NBTTagIntArray) object;
@@ -113,27 +137,35 @@ public class NMSImpl implements NMS {
         }
         if (object instanceof NBTTagInt) {
             NBTTagInt tag = (NBTTagInt) object;
-            return new NBTIntTag(tag.asInt());
+            return new NBTIntTag(tag.f());
         }
         if (object instanceof NBTTagList) {
             NBTTagList tag = (NBTTagList) object;
-            return new NBTListTag(tag.stream().map(this::fromNMS).collect(Collectors.toList()));
+            NBTListTag ret = new NBTListTag();
+            for (int i = 0; i < tag.size(); i++) {
+                ret.add(fromNMS(tag.get(i)));
+            }
+            return ret;
         }
         if (object instanceof NBTTagLongArray) {
             NBTTagLongArray tag = (NBTTagLongArray) object;
-            return new NBTLongArrayTag(tag.d());
+            try {
+                return new NBTLongArrayTag((long[]) b.get(tag));
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
         }
         if (object instanceof NBTTagLong) {
             NBTTagLong tag = (NBTTagLong) object;
-            return new NBTLongTag(tag.asLong());
+            return new NBTLongTag(tag.d());
         }
         if (object instanceof NBTTagShort) {
             NBTTagShort tag = (NBTTagShort) object;
-            return new NBTShortTag(tag.asShort());
+            return new NBTShortTag(tag.f());
         }
         if (object instanceof NBTTagString) {
             NBTTagString tag = (NBTTagString) object;
-            return NBTStringTag.valueOf(tag.asString());
+            return NBTStringTag.valueOf(tag.c_());
         }
         return null;
     }
@@ -142,7 +174,7 @@ public class NMSImpl implements NMS {
         return (NBTCompoundTag) fromNMS(CraftItemStack.asNMSCopy(item).save(new NBTTagCompound()));
     }
     public ItemStack getItem(NBTCompoundTag nbt) {
-        return CraftItemStack.asBukkitCopy(net.minecraft.server.v1_13_R2.ItemStack.a((NBTTagCompound) toNMS(nbt)));
+        return CraftItemStack.asBukkitCopy(new net.minecraft.server.v1_12_R1.ItemStack((NBTTagCompound) toNMS(nbt)));
     }
     public NBTCompoundTag getEntityNbt(Entity entity) {
         NBTTagCompound tag = new NBTTagCompound();
@@ -155,22 +187,21 @@ public class NMSImpl implements NMS {
     public NBTCompoundTag getTileEntityNbt(Location location) {
         Chunk chunk = ((CraftChunk)location.getChunk()).getHandle();
         BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        TileEntity entity = chunk.getTileEntity(pos);
+        TileEntity entity = chunk.tileEntities.get(pos);
         if(entity instanceof TileEntityMobSpawner)
             return (NBTCompoundTag) fromNMS(((TileEntityMobSpawner)entity).getSpawner().b(new NBTTagCompound()));
         return (NBTCompoundTag) fromNMS(entity.save(new NBTTagCompound()));
     }
     public void putTileEntityNbt(Location location, NBTCompoundTag nbt, boolean clean) {
+        Chunk chunk = ((CraftChunk)location.getChunk()).getHandle();
+        BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         if(clean) {
-            Chunk chunk = ((CraftChunk)location.getChunk()).getHandle();
-            BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
             TileEntity entity = chunk.tileEntities.get(pos);
             if(entity instanceof TileEntityMobSpawner)
                 ((TileEntityMobSpawner)entity).getSpawner().a((NBTTagCompound) toNMS(nbt));
             entity.load((NBTTagCompound) toNMS(nbt));
         } else {
-            Chunk chunk = ((CraftChunk)location.getChunk()).getHandle();
-            chunk.a((NBTTagCompound) toNMS(nbt));
+            chunk.tileEntities.get(pos).load((NBTTagCompound) toNMS(nbt));
         }
     }
 }

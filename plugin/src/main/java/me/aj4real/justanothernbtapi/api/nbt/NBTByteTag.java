@@ -4,6 +4,10 @@
 
 package me.aj4real.justanothernbtapi.api.nbt;
 
+import me.aj4real.justanothernbtapi.api.FriendlyByteBuf;
+
+import java.io.IOException;
+
 public class NBTByteTag implements NBTNumericTag {
     private byte b;
     private NBTByteTag(byte b) {
@@ -18,8 +22,14 @@ public class NBTByteTag implements NBTNumericTag {
         return this.b;
     }
 
+    public void write(FriendlyByteBuf buf) throws IOException {
+        buf.writeByte(this.b);
+    }
+    public static NBTByteTag read(FriendlyByteBuf buf) {
+        return new NBTByteTag(buf.readByte());
+    }
     public long getAsLong() {
-        return (long)this.b;
+        return this.b;
     }
 
     public int getAsInt() {
@@ -27,15 +37,19 @@ public class NBTByteTag implements NBTNumericTag {
     }
 
     public short getAsShort() {
-        return (short)this.b;
+        return this.b;
     }
 
     public double getAsDouble() {
-        return (double)this.b;
+        return this.b;
     }
 
     public float getAsFloat() {
-        return (float)this.b;
+        return this.b;
+    }
+
+    public byte getId() {
+        return 1;
     }
 
     private static class Cache {

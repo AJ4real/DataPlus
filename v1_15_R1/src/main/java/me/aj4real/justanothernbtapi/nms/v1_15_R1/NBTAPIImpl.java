@@ -4,7 +4,8 @@
 
 package me.aj4real.justanothernbtapi.nms.v1_15_R1;
 
-import me.aj4real.justanothernbtapi.NMS;
+import me.aj4real.justanothernbtapi.NBTAPI;
+import me.aj4real.justanothernbtapi.api.FriendlyByteBuf;
 import me.aj4real.justanothernbtapi.api.nbt.*;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -18,8 +19,16 @@ import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class NMSImpl implements NMS {
+public class NBTAPIImpl implements NBTAPI {
     public void onEnable(Plugin plugin) {
+    }
+
+    public void writeNbt(FriendlyByteBuf buf, NBTCompoundTag nbt) {
+        new PacketDataSerializer(buf).a((NBTTagCompound) toNMS(nbt));
+    }
+
+    public NBTCompoundTag readNbt(FriendlyByteBuf buf) {
+        return (NBTCompoundTag) fromNMS(new PacketDataSerializer(buf).l());
     }
 
     public NBTBase toNMS(NBTTag object) {
@@ -61,7 +70,7 @@ public class NMSImpl implements NMS {
         if(object instanceof NBTListTag) {
             NBTListTag tag = (NBTListTag) object;
             NBTTagList ret = new NBTTagList();
-            ret.addAll(tag.get().stream().map(this::toNMS).collect(Collectors.toList()));
+            ret.addAll(tag.stream().map(this::toNMS).collect(Collectors.toList()));
             return ret;
         }
         if(object instanceof NBTLongArrayTag) {

@@ -2,15 +2,14 @@
  Copyright (c) All Rights Reserved
  *********************************/
 
-package me.aj4real.justanothernbtapi.nms.v1_16_R2;
-
-import me.aj4real.justanothernbtapi.NMS;
+package me.aj4real.justanothernbtapi.nms.v1_14_R1; import me.aj4real.justanothernbtapi.NBTAPI;
+import me.aj4real.justanothernbtapi.api.FriendlyByteBuf;
 import me.aj4real.justanothernbtapi.api.nbt.*;
-import net.minecraft.server.v1_16_R2.*;
+import net.minecraft.server.v1_14_R1.*;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_16_R2.CraftChunk;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_14_R1.CraftChunk;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
@@ -18,8 +17,16 @@ import org.bukkit.plugin.Plugin;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class NMSImpl implements NMS {
+public class NBTAPIImpl implements NBTAPI {
     public void onEnable(Plugin plugin) {
+    }
+
+    public void writeNbt(FriendlyByteBuf buf, NBTCompoundTag nbt) {
+        new PacketDataSerializer(buf).a((NBTTagCompound) toNMS(nbt));
+    }
+
+    public NBTCompoundTag readNbt(FriendlyByteBuf buf) {
+        return (NBTCompoundTag) fromNMS(new PacketDataSerializer(buf).l());
     }
 
     public NBTBase toNMS(NBTTag object) {
@@ -29,11 +36,11 @@ public class NMSImpl implements NMS {
         }
         if(object instanceof NBTByteTag) {
             NBTByteTag tag = (NBTByteTag) object;
-            return NBTTagByte.a(tag.get());
+            return new NBTTagByte(tag.get());
         }
         if(object instanceof NBTCompoundTag) {
             NBTCompoundTag tag = (NBTCompoundTag) object;
-            net.minecraft.server.v1_16_R2.NBTTagCompound ret = new net.minecraft.server.v1_16_R2.NBTTagCompound();
+            net.minecraft.server.v1_14_R1.NBTTagCompound ret = new net.minecraft.server.v1_14_R1.NBTTagCompound();
             for (String key : tag.keySet()) {
                 ret.set(key, toNMS(tag.get(key)));
             }
@@ -41,14 +48,14 @@ public class NMSImpl implements NMS {
         }
         if(object instanceof NBTDoubleTag) {
             NBTDoubleTag tag = (NBTDoubleTag) object;
-            return NBTTagDouble.a(tag.get());
+            return new NBTTagDouble(tag.get());
         }
         if(object instanceof NBTEndTag) {
-            return NBTTagEnd.b;
+            return new NBTTagEnd();
         }
         if(object instanceof NBTFloatTag) {
             NBTFloatTag tag = (NBTFloatTag) object;
-            return NBTTagFloat.a(tag.get());
+            return new NBTTagFloat(tag.get());
         }
         if(object instanceof NBTIntArrayTag) {
             NBTIntArrayTag tag = (NBTIntArrayTag) object;
@@ -56,12 +63,12 @@ public class NMSImpl implements NMS {
         }
         if(object instanceof NBTIntTag) {
             NBTIntTag tag = (NBTIntTag) object;
-            return NBTTagInt.a(tag.get());
+            return new NBTTagInt(tag.get());
         }
         if(object instanceof NBTListTag) {
             NBTListTag tag = (NBTListTag) object;
             NBTTagList ret = new NBTTagList();
-            ret.addAll(tag.get().stream().map(this::toNMS).collect(Collectors.toList()));
+            ret.addAll(tag.stream().map(this::toNMS).collect(Collectors.toList()));
             return ret;
         }
         if(object instanceof NBTLongArrayTag) {
@@ -70,15 +77,15 @@ public class NMSImpl implements NMS {
         }
         if(object instanceof NBTLongTag) {
             NBTLongTag tag = (NBTLongTag) object;
-            return NBTTagLong.a(tag.get());
+            return new NBTTagLong(tag.get());
         }
         if(object instanceof NBTShortTag) {
             NBTShortTag tag = (NBTShortTag) object;
-            return NBTTagShort.a(tag.get());
+            return new NBTTagShort(tag.get());
         }
         if(object instanceof NBTStringTag) {
             NBTStringTag tag = (NBTStringTag) object;
-            return NBTTagString.a(tag.toString());
+            return new NBTTagString(tag.toString());
         }
         return null;
     }
@@ -145,7 +152,7 @@ public class NMSImpl implements NMS {
         return (NBTCompoundTag) fromNMS(CraftItemStack.asNMSCopy(item).save(new NBTTagCompound()));
     }
     public ItemStack getItem(NBTCompoundTag nbt) {
-        return CraftItemStack.asBukkitCopy(net.minecraft.server.v1_16_R2.ItemStack.a((NBTTagCompound) toNMS(nbt)));
+        return CraftItemStack.asBukkitCopy(net.minecraft.server.v1_14_R1.ItemStack.a((NBTTagCompound) toNMS(nbt)));
     }
     public NBTCompoundTag getEntityNbt(Entity entity) {
         NBTTagCompound tag = new NBTTagCompound();
@@ -157,7 +164,7 @@ public class NMSImpl implements NMS {
         if(!op.isPresent()) {
             return;
         }
-        ((CraftEntity)entity).getHandle().load((NBTTagCompound) toNMS(nbt));
+        ((CraftEntity)entity).getHandle().f((NBTTagCompound) toNMS(nbt));
     }
     public NBTCompoundTag getTileEntityNbt(Location location) {
         Chunk chunk = ((CraftChunk)location.getChunk()).getHandle();
@@ -174,7 +181,7 @@ public class NMSImpl implements NMS {
             TileEntity entity = chunk.tileEntities.get(pos);
             if(entity instanceof TileEntityMobSpawner)
                 ((TileEntityMobSpawner)entity).getSpawner().a((NBTTagCompound) toNMS(nbt));
-            entity.load(entity.getBlock(), (NBTTagCompound) toNMS(nbt));
+            entity.load((NBTTagCompound) toNMS(nbt));
         } else {
             Chunk chunk = ((CraftChunk)location.getChunk()).getHandle();
             chunk.a((NBTTagCompound) toNMS(nbt));
