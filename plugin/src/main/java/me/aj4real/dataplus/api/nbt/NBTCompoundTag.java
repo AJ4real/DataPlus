@@ -55,10 +55,10 @@ public class NBTCompoundTag extends HashMap<String, NBTTag> implements NBTTag {
     }
 
     public void write(FriendlyByteBuf buf) throws IOException {
-        DataPlus.nms.writeNbt(buf, this);
+        buf.writeNbt(this);
     }
     public static NBTCompoundTag read(FriendlyByteBuf buf) {
-        return DataPlus.nms.readNbt(buf);
+        return buf.readNbt();
     }
 
     public byte getId() {

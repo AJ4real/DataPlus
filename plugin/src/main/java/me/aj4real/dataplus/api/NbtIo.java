@@ -30,6 +30,7 @@ public class NbtIo {
     public static NBTTag parseNbt(FriendlyByteBuf buf, boolean unnamed) {
         byte type = buf.readByte();
         buf.readUtf();
+        //TODO
         return tagGetters.get(type).apply(buf);
     }
 }

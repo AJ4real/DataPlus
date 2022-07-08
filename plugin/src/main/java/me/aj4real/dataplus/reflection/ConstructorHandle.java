@@ -10,7 +10,7 @@ public class ConstructorHandle<T> {
     private static final Map<Constructor, ConstructorHandle> cache = new HashMap<>();
 
     private final Constructor<T> constructor;
-    private ConstructorHandle(Constructor constructor) {
+    private ConstructorHandle(Constructor<T> constructor) {
         this.constructor = constructor;
         cache.put(constructor, this);
     }
@@ -25,7 +25,7 @@ public class ConstructorHandle<T> {
         return null;
     }
 
-    public static ConstructorHandle of(Constructor constructor) {
+    public static <T> ConstructorHandle<T> of(Constructor<T> constructor) {
         if(cache.containsKey(constructor)) return cache.get(constructor);
         return new ConstructorHandle(constructor);
     }

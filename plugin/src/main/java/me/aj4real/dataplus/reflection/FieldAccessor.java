@@ -7,7 +7,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FieldAccessor<C> {
+public class FieldAccessor<T> {
 
     private static final Unsafe unsafe;
 
@@ -42,17 +42,17 @@ public class FieldAccessor<C> {
         return this.field;
     }
 
-    public C get(Object control) {
+    public T get(Object control) {
         field.setAccessible(true);
         try {
-            return (C) field.get(control);
+            return (T) field.get(control);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public boolean set(Object control, C newValue) {
+    public boolean set(Object control, T newValue) {
         field.setAccessible(true);
         Object object = newValue;
         try {
