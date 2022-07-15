@@ -31,6 +31,10 @@ public class NBTDoubleTag implements NBTNumericTag {
         return 6;
     }
 
+    public boolean isValid() {
+        return true;
+    }
+
     public long getAsLong() {
         return (long)this.object;
     }

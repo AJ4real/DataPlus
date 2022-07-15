@@ -16,9 +16,11 @@ public class Biome implements Cloneable {
     private int id;
     private boolean vanilla;
 
+    private Biome original;
+
     //element
     private double temperature = 0, downfall = 0;
-    private String precipitation;
+    private String precipitation = "NONE";
 
     //effect
     private int skyColor, waterColor, fogColor, waterFogColor;
@@ -43,6 +45,20 @@ public class Biome implements Cloneable {
             int fogColor,
             int waterFogColor
     ) {
+        this(name, temperature, downfall, precipitation, skyColor, waterColor, fogColor, waterFogColor, true);
+    }
+
+    private Biome(
+            NamespacedKey name,
+            double temperature,
+            double downfall,
+            String precipitation,
+            int skyColor,
+            int waterColor,
+            int fogColor,
+            int waterFogColor,
+            boolean clone
+    ) {
         this.name = name;
         this.temperature = temperature;
         this.downfall = downfall;
@@ -51,14 +67,13 @@ public class Biome implements Cloneable {
         this.waterColor = waterColor;
         this.fogColor = fogColor;
         this.waterFogColor = waterFogColor;
-//        this.vanilla = Arrays.stream(org.bukkit.block.Biome.values()).map(org.bukkit.block.Biome::getKey).filter(name::equals).count() != 0;
-//        this.vanilla = name.getNamespace().equalsIgnoreCase("minecraft") && this.getClass() == Biome.class;
         try {
             org.bukkit.block.Biome b = org.bukkit.block.Biome.valueOf(name.getKey());
             this.vanilla = b != org.bukkit.block.Biome.CUSTOM;
         } catch (Exception e) {
             this.vanilla = false;
         }
+        if(clone) this.original = this.clone();
     }
 
     public void setId(int value) {
@@ -69,7 +84,7 @@ public class Biome implements Cloneable {
         this.name = value;
     }
 
-    public void setTickDelay(int value) {
+    public void setTickDelay(Integer value) {
         this.tickDelay = Optional.ofNullable(value);
     }
 
@@ -77,36 +92,40 @@ public class Biome implements Cloneable {
         this.blockSearchExtent = Optional.ofNullable(value);
     }
 
-    public void setOffset(double value) {
+    public void setOffset(Double value) {
         this.offset = Optional.ofNullable(value);
     }
 
-    public void setWaterFogColor(int value) {
-        this.waterFogColor = value;
+    public void setWaterFogColor(Integer value) {
+        if(value == null) this.waterFogColor = original.waterFogColor;
+        else this.waterFogColor = value;
     }
 
     public void setWaterFogColor(int r, int g, int b) {
         setWaterFogColor(255 << 24 | r << 16 | g << 8 | b);
     }
 
-    public void setFogColor(int value) {
-        this.fogColor = value;
+    public void setFogColor(Integer value) {
+        if(value == null) this.fogColor = original.fogColor;
+        else this.fogColor = value;
     }
 
     public void setFogColor(int r, int g, int b) {
         setFogColor(255 << 24 | r << 16 | g << 8 | b);
     }
 
-    public void setWaterColor(int value) {
-        this.waterColor = value;
+    public void setWaterColor(Integer value) {
+        if(value == null) this.waterColor = original.waterColor;
+        else this.waterColor = value;
     }
 
     public void setWaterColor(int r, int g, int b) {
         setWaterColor(255 << 24 | r << 16 | g << 8 | b);
     }
 
-    public void setSkyColor(int value) {
-        this.skyColor = value;
+    public void setSkyColor(Integer value) {
+        if(value == null) this.skyColor = original.skyColor;
+        else this.skyColor = value;
     }
 
     public void setSkyColor(int r, int g, int b) {
@@ -121,11 +140,11 @@ public class Biome implements Cloneable {
         this.precipitation = value;
     }
 
-    public void setDownfall(float value) {
+    public void setDownfall(Float value) {
         this.downfall = value;
     }
 
-    public void setTemperature(float value) {
+    public void setTemperature(Float value) {
         this.temperature = value;
     }
 
@@ -137,20 +156,22 @@ public class Biome implements Cloneable {
         this.ambientSound = Optional.ofNullable(ambientSound);
     }
 
-    public void setDownfall(double downfall) {
+    public void setDownfall(Double downfall) {
         this.downfall = downfall;
     }
 
-    public void setFoliageColor(int foliageColor) {
-        this.foliageColor = Optional.ofNullable(foliageColor);
+    public void setFoliageColor(Integer value) {
+        if(value == null) this.foliageColor = original.foliageColor;
+        else this.foliageColor = Optional.ofNullable(value);
     }
 
     public void setFoliageColor(int r, int g, int b) {
         setFoliageColor(255 << 24 | r << 16 | g << 8 | b);
     }
 
-    public void setGrassColor(int grassColor) {
-        this.grassColor = Optional.ofNullable(grassColor);
+    public void setGrassColor(Integer value) {
+        if(value == null) this.grassColor = original.grassColor;
+        else this.grassColor = Optional.of(value);
     }
 
     public void setGrassColor(int r, int g, int b) {
@@ -165,7 +186,7 @@ public class Biome implements Cloneable {
         this.particle = Optional.ofNullable(particle);
     }
 
-    public void setTemperature(double temperature) {
+    public void setTemperature(Double temperature) {
         this.temperature = temperature;
     }
 
@@ -267,29 +288,20 @@ public class Biome implements Cloneable {
                 this.skyColor,
                 this.waterColor,
                 this.fogColor,
-                this.waterFogColor
+                this.waterFogColor,
+                false
         );
-        b.setId(this.getId());
-        if (this.getOffset().isPresent())
-            b.setOffset(this.getOffset().get());
-        if (this.getTickDelay().isPresent())
-            b.setTickDelay(this.getTickDelay().get());
-        if (this.getBlockSearchExtent().isPresent())
-            b.setBlockSearchExtent(this.getBlockSearchExtent().get());
-        if (this.getSound().isPresent())
-            b.setSound(this.getSound().get());
-        if (this.getFoliageColor().isPresent())
-            b.setFoliageColor(this.getFoliageColor().get());
-        if (this.getGrassColor().isPresent())
-            b.setGrassColor(this.getGrassColor().get());
-        if (this.getParticle().isPresent())
-            b.setParticle(this.getParticle().get().clone());
-        if (this.getAmbientSound().isPresent())
-            b.setAmbientSound(this.getAmbientSound().get());
-        if (this.getGrassColorModifier().isPresent())
-            b.setGrassColorModifier(this.getGrassColorModifier().get());
-        if (this.getTemperatureModifier().isPresent())
-            b.setTemperatureModifier(this.getTemperatureModifier().get());
+        b.id = this.id;
+        b.offset = this.offset;
+        b.tickDelay = this.tickDelay;
+        b.sound = this.sound;
+        b.foliageColor = this.foliageColor;
+        b.grassColor = this.grassColor;
+        b.ambientSound = this.ambientSound;
+        b.grassColorModifier = this.grassColorModifier;
+        b.temperatureModifier = this.temperatureModifier;
+        b.blockSearchExtent = this.blockSearchExtent;
+        b.particle = this.particle;
         return b;
     }
 }

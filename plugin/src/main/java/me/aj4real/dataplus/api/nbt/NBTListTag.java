@@ -70,6 +70,9 @@ public class NBTListTag extends ArrayList<NBTTag> implements NBTCollectionTag {
     public byte getId() {
         return 9;
     }
+    public boolean isValid() {
+        return true;
+    }
     public boolean addByteArray(byte[] value) {
         return add(new NBTByteArrayTag(value));
     }

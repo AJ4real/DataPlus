@@ -22,4 +22,8 @@ public class NBTEndTag implements NBTTag {
         return 0;
     }
 
+    public boolean isValid() {
+        return true;
+    }
+
 }

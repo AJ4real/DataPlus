@@ -28,6 +28,10 @@ public class NBTLongTag implements NBTNumericTag {
         return 4;
     }
 
+    public boolean isValid() {
+        return true;
+    }
+
     public long getAsLong() {
         return this.object;
     }

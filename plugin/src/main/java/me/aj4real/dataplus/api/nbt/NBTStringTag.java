@@ -10,6 +10,7 @@ import java.util.stream.IntStream;
 
 public class NBTStringTag implements NBTTag, Comparable<String>, CharSequence {
     private static final NBTStringTag EMPTY = new NBTStringTag("");
+    private static final NBTStringTag NULL = new NBTStringTag(null);
     private String delegate;
 
     private NBTStringTag(String delegate) {
@@ -29,7 +30,12 @@ public class NBTStringTag implements NBTTag, Comparable<String>, CharSequence {
         return 8;
     }
 
+    public boolean isValid() {
+        return this.delegate != null;
+    }
+
     public static NBTStringTag valueOf(String delegate) {
+        if(delegate == null) return NULL;
         return delegate.isEmpty() ? EMPTY : new NBTStringTag(delegate);
     }
 

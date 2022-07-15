@@ -41,6 +41,10 @@ public class NBTLongArrayTag implements NBTCollectionTag {
         return 12;
     }
 
+    public boolean isValid() {
+        return this.object != null;
+    }
+
     public long[] get() {
         return this.object;
     }

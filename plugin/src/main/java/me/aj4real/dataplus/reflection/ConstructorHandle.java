@@ -10,7 +10,7 @@ public class ConstructorHandle<T> {
     private static final Map<Constructor, ConstructorHandle> cache = new HashMap<>();
 
     private final Constructor<T> constructor;
-    private ConstructorHandle(Constructor constructor) {
+    private ConstructorHandle(Constructor<T> constructor) {
         this.constructor = constructor;
         cache.put(constructor, this);
     }

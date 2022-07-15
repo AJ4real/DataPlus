@@ -15,7 +15,7 @@ public class ClassAccessor<T> {
         cache.put(clazz, this);
     }
 
-    public static <T> ClassAccessor of(Class<T> clazz) {
+    public static <T> ClassAccessor<T> of(Class<T> clazz) {
         ClassAccessor<T> get = cache.get(clazz);
         return get != null ? get : new ClassAccessor(clazz);
     }

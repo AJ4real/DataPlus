@@ -12,4 +12,5 @@ public interface NBTTag {
    void write(FriendlyByteBuf buf) throws IOException;
    byte getId();
    NBTTag clone();
+   boolean isValid();
 }

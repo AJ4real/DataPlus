@@ -44,5 +44,9 @@ public class NBTIntArrayTag implements NBTCollectionTag {
         return 11;
     }
 
+    public boolean isValid() {
+        return this.object != null;
+    }
+
 
 }

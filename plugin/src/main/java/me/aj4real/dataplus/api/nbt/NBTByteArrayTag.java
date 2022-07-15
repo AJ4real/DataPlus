@@ -34,5 +34,7 @@ public class NBTByteArrayTag implements NBTCollectionTag {
     public byte getId() {
         return 7;
     }
-
+    public boolean isValid() {
+        return this.bytes != null;
+    }
 }

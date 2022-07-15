@@ -44,4 +44,8 @@ public class NBTFloatTag implements NBTNumericTag {
         return 5;
     }
 
+    public boolean isValid() {
+        return true;
+    }
+
 }

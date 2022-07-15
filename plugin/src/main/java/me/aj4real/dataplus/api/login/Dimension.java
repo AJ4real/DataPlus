@@ -231,6 +231,8 @@ public class Dimension implements Cloneable {
                 this.infiniburn,
                 this.effects
         );
+        d.monsterSpawnLightLimit = this.monsterSpawnLightLimit;
+        d.monsterSpawnLightLevel = this.monsterSpawnLightLevel;
         return d;
     }
 }

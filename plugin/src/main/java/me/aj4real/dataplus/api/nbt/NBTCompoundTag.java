@@ -5,18 +5,14 @@
 package me.aj4real.dataplus.api.nbt;
 
 import io.netty.buffer.Unpooled;
-import me.aj4real.dataplus.DataPlus;
 import me.aj4real.dataplus.api.FriendlyByteBuf;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataType;
 
-import javax.swing.text.Keymap;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
 
 public class NBTCompoundTag extends HashMap<String, NBTTag> implements NBTTag {
 
@@ -55,14 +51,18 @@ public class NBTCompoundTag extends HashMap<String, NBTTag> implements NBTTag {
     }
 
     public void write(FriendlyByteBuf buf) throws IOException {
-        DataPlus.nms.writeNbt(buf, this);
+        buf.writeNbt(this);
     }
     public static NBTCompoundTag read(FriendlyByteBuf buf) {
-        return DataPlus.nms.readNbt(buf);
+        return buf.readNbt();
     }
 
     public byte getId() {
         return 10;
+    }
+
+    public boolean isValid() {
+        return true;
     }
 
     public void putBoolean(String key, boolean value) {
@@ -107,6 +107,10 @@ public class NBTCompoundTag extends HashMap<String, NBTTag> implements NBTTag {
     public void putString(String key, String value) {
         put(key, NBTStringTag.valueOf(value));
     }
+    public NBTTag put(String key, NBTTag value) {
+        if(value.isValid()) return super.put(key, value);
+        else return null;
+    }
 
     public boolean getBoolean(String key) {
         return getByte(key) == 1;
@@ -149,6 +153,9 @@ public class NBTCompoundTag extends HashMap<String, NBTTag> implements NBTTag {
     }
     public String getString(String key) {
         return ((NBTStringTag)get(key)).toString();
+    }
+    public NBTTag get(String key) {
+        return super.get(key);
     }
 
 }

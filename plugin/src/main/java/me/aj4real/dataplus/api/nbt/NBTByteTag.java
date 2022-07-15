@@ -55,6 +55,9 @@ public class NBTByteTag implements NBTNumericTag {
         return 1;
     }
 
+    public boolean isValid() {
+        return true;
+    }
     private static class Cache {
         static final NBTByteTag[] cache = new NBTByteTag[256];
         private Cache() {
