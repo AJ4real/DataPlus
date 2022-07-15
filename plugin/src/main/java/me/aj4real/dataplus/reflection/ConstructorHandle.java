@@ -25,9 +25,10 @@ public class ConstructorHandle<T> {
         return null;
     }
 
-    public static <T> ConstructorHandle<T> of(Constructor<T> constructor) {
-        if(cache.containsKey(constructor)) return cache.get(constructor);
-        return new ConstructorHandle(constructor);
+    public static <T> ConstructorHandle<T> of(Constructor<?> constructor) {
+        ConstructorHandle<T> ret = cache.get(constructor);
+        if(ret == null) return new ConstructorHandle(constructor);
+        else return ret;
     }
 
 }
