@@ -128,7 +128,7 @@ public class LoginPacketEditor {
             ret2.putString("name", d.getName().toString());
             ret2.putInt("id", d.getId());
             NBTCompoundTag element = new NBTCompoundTag();
-            element.putString("precipitation", d.getPrecipitation());
+            element.putString("precipitation", d.getPrecipitation().toLowerCase());
             element.putFloat("temperature", (float) d.getTemperature());
             element.putFloat("downfall", (float) d.getDownfall());
             NBTCompoundTag effects = new NBTCompoundTag();
