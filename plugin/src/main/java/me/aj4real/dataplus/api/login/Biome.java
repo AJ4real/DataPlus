@@ -16,11 +16,19 @@ public class Biome implements Cloneable {
     private int id;
     private boolean vanilla;
 
+    private boolean modFogColor = false,
+            modFoliageColor = false,
+            modGrassColor = false,
+            modParticle = false,
+            modSkyColor = false,
+            modWaterColor = false,
+            modWaterFogColor = false;
+
     private Biome original;
 
     //element
-    private double temperature = 0, downfall = 0;
-    private String precipitation = "NONE";
+    private double temperature, downfall;
+    private String precipitation;
 
     //effect
     private int skyColor, waterColor, fogColor, waterFogColor;
@@ -76,6 +84,10 @@ public class Biome implements Cloneable {
         if(clone) this.original = this.clone();
     }
 
+    public boolean isMod() {
+        return modFogColor || modParticle || (this.precipitation.equalsIgnoreCase(original.precipitation)) || modSkyColor || modFoliageColor || modGrassColor || modWaterColor || modWaterFogColor;
+    }
+
     public void setId(int value) {
         this.id = value;
     }
@@ -97,8 +109,13 @@ public class Biome implements Cloneable {
     }
 
     public void setWaterFogColor(Integer value) {
-        if(value == null) this.waterFogColor = original.waterFogColor;
-        else this.waterFogColor = value;
+        if(value == null) {
+            this.waterFogColor = original.waterFogColor;
+            this.modWaterFogColor = false;
+        } else {
+            this.waterFogColor = value;
+            this.modWaterFogColor = true;
+        }
     }
 
     public void setWaterFogColor(int r, int g, int b) {
@@ -106,8 +123,13 @@ public class Biome implements Cloneable {
     }
 
     public void setFogColor(Integer value) {
-        if(value == null) this.fogColor = original.fogColor;
-        else this.fogColor = value;
+        if(value == null) {
+            this.fogColor = original.fogColor;
+            this.modFogColor = false;
+        } else {
+            this.fogColor = value;
+            this.modFogColor = true;
+        }
     }
 
     public void setFogColor(int r, int g, int b) {
@@ -115,8 +137,13 @@ public class Biome implements Cloneable {
     }
 
     public void setWaterColor(Integer value) {
-        if(value == null) this.waterColor = original.waterColor;
-        else this.waterColor = value;
+        if(value == null) {
+            this.waterColor = original.waterColor;
+            this.modWaterColor = false;
+        } else {
+            this.waterColor = value;
+            this.modWaterColor = true;
+        }
     }
 
     public void setWaterColor(int r, int g, int b) {
@@ -124,8 +151,13 @@ public class Biome implements Cloneable {
     }
 
     public void setSkyColor(Integer value) {
-        if(value == null) this.skyColor = original.skyColor;
-        else this.skyColor = value;
+        if(value == null) {
+            this.skyColor = original.skyColor;
+            this.modSkyColor = false;
+        } else {
+            this.skyColor = value;
+            this.modSkyColor = true;
+        }
     }
 
     public void setSkyColor(int r, int g, int b) {
@@ -137,7 +169,9 @@ public class Biome implements Cloneable {
     }
 
     public void setPrecipitation(String value) {
-        this.precipitation = value;
+        if(value == null) this.precipitation = original.precipitation;
+        else this.precipitation = value;
+
     }
 
     public void setDownfall(Float value) {
@@ -161,8 +195,13 @@ public class Biome implements Cloneable {
     }
 
     public void setFoliageColor(Integer value) {
-        if(value == null) this.foliageColor = original.foliageColor;
-        else this.foliageColor = Optional.ofNullable(value);
+        if(value == null) {
+            this.foliageColor = original.foliageColor;
+            this.modFoliageColor = false;
+        } else {
+            this.foliageColor = Optional.of(value);
+            this.modFoliageColor = true;
+        }
     }
 
     public void setFoliageColor(int r, int g, int b) {
@@ -170,8 +209,13 @@ public class Biome implements Cloneable {
     }
 
     public void setGrassColor(Integer value) {
-        if(value == null) this.grassColor = original.grassColor;
-        else this.grassColor = Optional.of(value);
+        if(value == null) {
+            this.grassColor = original.grassColor;
+            this.modGrassColor = false;
+        } else {
+            this.grassColor = Optional.of(value);
+            this.modGrassColor = true;
+        }
     }
 
     public void setGrassColor(int r, int g, int b) {
@@ -184,6 +228,11 @@ public class Biome implements Cloneable {
 
     public void setParticle(NBTCompoundTag particle) {
         this.particle = Optional.ofNullable(particle);
+        if(particle == null) {
+            this.modParticle = false;
+        } else {
+            this.modParticle = true;
+        }
     }
 
     public void setTemperature(Double temperature) {
