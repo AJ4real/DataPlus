@@ -4,6 +4,7 @@
 
 package me.aj4real.dataplus;
 
+import me.aj4real.dataplus.denizen.DenizenImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -33,6 +34,9 @@ public class Dist extends JavaPlugin {
             DataPlusNMS nms = Version.valueOf(s).nms.newInstance();
             nms.onEnable(plugin);
             DataPlus.nms = nms;
+            if(Bukkit.getPluginManager().isPluginEnabled("Denizen")) {
+                new DenizenImpl(nms);
+            }
             return nms;
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Could not initiate support for " + s + ", Is it a supported version?", e);
@@ -44,14 +48,6 @@ public class Dist extends JavaPlugin {
         main.onDisable(this);
     }
     public enum Version {
-        v1_12_R1(me.aj4real.dataplus.nms.v1_12_R1.DataPlusNMSImpl.class),
-        v1_13_R1(me.aj4real.dataplus.nms.v1_13_R1.DataPlusNMSImpl.class),
-        v1_13_R2(me.aj4real.dataplus.nms.v1_13_R2.DataPlusNMSImpl.class),
-        v1_14_R1(me.aj4real.dataplus.nms.v1_14_R1.DataPlusNMSImpl.class),
-        v1_15_R1(me.aj4real.dataplus.nms.v1_15_R1.DataPlusNMSImpl.class),
-        v1_16_R1(me.aj4real.dataplus.nms.v1_16_R1.DataPlusNMSImpl.class),
-        v1_16_R2(me.aj4real.dataplus.nms.v1_16_R2.DataPlusNMSImpl.class),
-        v1_16_R3(me.aj4real.dataplus.nms.v1_16_R3.DataPlusNMSImpl.class),
         v1_17_R1(me.aj4real.dataplus.nms.v1_17_R1.DataPlusNMSImpl.class),
         v1_18_R1(me.aj4real.dataplus.nms.v1_18_R1.DataPlusNMSImpl.class),
         v1_18_R2(me.aj4real.dataplus.nms.v1_18_R2.DataPlusNMSImpl.class),

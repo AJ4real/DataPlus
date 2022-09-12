@@ -7,6 +7,7 @@ package me.aj4real.dataplus;
 import me.aj4real.dataplus.api.ChunkDataPacketEditor;
 import me.aj4real.dataplus.api.FriendlyByteBuf;
 import me.aj4real.dataplus.api.nbt.NBTCompoundTag;
+import me.aj4real.dataplus.api.nbt.NBTListTag;
 import me.aj4real.dataplus.api.nbt.NBTTag;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -41,4 +42,7 @@ public interface DataPlusNMS {
     NBTCompoundTag getTileEntityNbt(Location location);
     void putTileEntityNbt(Location location, NBTCompoundTag nbt, boolean clean);
 
+    NBTListTag getItemEnchantments(ItemStack item);
+    NBTCompoundTag getBlockNbt(Location location);
+    NBTCompoundTag getFluidNbt(Location location);
 }

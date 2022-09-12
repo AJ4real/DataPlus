@@ -8,6 +8,7 @@ import me.aj4real.dataplus.api.nbt.NBTCompoundTag;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataType;
 
+import javax.annotation.OverridingMethodsMustInvokeSuper;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -85,7 +86,7 @@ public class Biome implements Cloneable {
     }
 
     public boolean isMod() {
-        return modFogColor || modParticle || (this.precipitation.equalsIgnoreCase(original.precipitation)) || modSkyColor || modFoliageColor || modGrassColor || modWaterColor || modWaterFogColor;
+        return modFogColor || modFoliageColor || modGrassColor || modParticle || modSkyColor || modWaterColor || modWaterFogColor;
     }
 
     public void setId(int value) {
@@ -171,7 +172,6 @@ public class Biome implements Cloneable {
     public void setPrecipitation(String value) {
         if(value == null) this.precipitation = original.precipitation;
         else this.precipitation = value;
-
     }
 
     public void setDownfall(Float value) {

@@ -28,13 +28,15 @@ import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
 import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
 import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockState;
+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockStates;
 import org.bukkit.craftbukkit.v1_18_R2.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.function.Predicate;
 
 public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
 
@@ -137,6 +139,20 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
 
     public void setWorld(World world) {
         this.world = world;
+    }
+
+    public List<org.bukkit.block.BlockState> getAllBlocks(Predicate<org.bukkit.block.BlockState> consumer) {
+        List<org.bukkit.block.BlockState> ret = new ArrayList<>();
+        for (int y = 0; y < this.states.length; y++) {
+            PalettedContainer<BlockState> states = this.states[y];
+            states.getAll((b) -> {
+                org.bukkit.block.BlockState state = CraftBlockStates.getBlockState(b, null);
+                if(consumer.test(state)) {
+                    ret.add(state);
+                }
+            });
+        }
+        return ret;
     }
 
     public boolean setBlockMaterial(int x, int y, int z, Material material) {

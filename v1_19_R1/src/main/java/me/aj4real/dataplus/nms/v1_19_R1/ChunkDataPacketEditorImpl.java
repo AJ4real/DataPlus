@@ -28,17 +28,21 @@ import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
 import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState;
+import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockStates;
 import org.bukkit.craftbukkit.v1_19_R1.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.function.Predicate;
 
 public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
 
     public static final FieldAccessor<byte[]> chunkdataBuffer;
     public static final FieldAccessor<ClientboundLevelChunkPacketData> packetChunkData;
     public static final ConstructorHandle<PalettedContainer> palettedContainer;
+    public static final ClassAccessor<?> blockEntity;
 
     private static final RegistryAccess access;
 
@@ -49,6 +53,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         packetChunkData = chunkWithLightPacket.lookupField(ClientboundLevelChunkPacketData.class).get(0);
         palettedContainer = ConstructorHandle.of(Arrays.stream(PalettedContainer.class.getConstructors()).filter((c) -> c.getParameterCount() == 3).findAny().get());
         access = ((CraftServer) Bukkit.getServer()).getHandle().getServer().registryAccess();
+        blockEntity = ClassAccessor.of(ClientboundLevelChunkPacketData.class.getNestMembers()[0]);
     }
 
     private final PalettedContainer<BlockState>[] states;
@@ -60,10 +65,10 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
     private World world;
     private final ClientboundLevelChunkWithLightPacket original;
     private final int min, max;
-    public ChunkDataPacketEditorImpl(Chunk chunk) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    public ChunkDataPacketEditorImpl(Chunk chunk) {
         this(chunk.getWorld(), new ClientboundLevelChunkWithLightPacket(((CraftChunk)chunk).getHandle(), ((CraftWorld)chunk.getWorld()).getHandle().getLightEngine(), null, null, true));
     }
-    public ChunkDataPacketEditorImpl(World world, ClientboundLevelChunkWithLightPacket packet) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    public ChunkDataPacketEditorImpl(World world, ClientboundLevelChunkWithLightPacket packet) {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         packet.write(buffer);
         this.original = packet;
@@ -78,20 +83,26 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         this.blockCount = new int[size];
         this.biomes = new PalettedContainer[size];
         this.registry = ((CraftWorld)world).getHandle().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
-        FriendlyByteBuf tmp = packet.getChunkData().getReadBuffer();
+        FriendlyByteBuf palettes = packet.getChunkData().getReadBuffer();
         for (int y = 0; y < size; y++) {
-            short blockCount = tmp.readShort();
+            short blockCount = palettes.readShort();
             this.blockCount[y] = blockCount;
             PalettedContainer<BlockState> states = (PalettedContainer<BlockState>) palettedContainer.invoke(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
-            states.read(tmp);
+            states.read(palettes);
             this.states[y] = states;
             PalettedContainer<Biome> biomes = (PalettedContainer<Biome>) palettedContainer.invoke(registry, registry.getOrThrow(Biomes.THE_VOID), PalettedContainer.Strategy.SECTION_BIOMES);
-            biomes.read(tmp);
+            biomes.read(palettes);
             this.biomes[y] = biomes;
         }
+//        int blockEntities = buffer.readVarInt();
+//        System.out.println(blockEntities);
+//        for (int i = 0; i < blockEntities; i++) {
+//            BlockEntity entity = ChunkDataPacketEditor.BlockEntity.read(buffer);
+//            System.out.println(new YAMLSerializer().write(entity.getNbt()).saveToString());
+//        }
     }
 
-    public ClientboundLevelChunkWithLightPacket build() throws IllegalAccessException {
+    public ClientboundLevelChunkWithLightPacket build() {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         this.original.write(buffer);
         ClientboundLevelChunkWithLightPacket duplicate = new ClientboundLevelChunkWithLightPacket(buffer);
@@ -137,6 +148,20 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         this.world = world;
     }
 
+    public List<org.bukkit.block.BlockState> getAllBlocks(Predicate<org.bukkit.block.BlockState> consumer) {
+        List<org.bukkit.block.BlockState> ret = new ArrayList<>();
+        for (int y = 0; y < this.states.length; y++) {
+            PalettedContainer<BlockState> states = this.states[y];
+            states.getAll((b) -> {
+                org.bukkit.block.BlockState state = CraftBlockStates.getBlockState(b, null);
+                if(consumer.test(state)) {
+                    ret.add(state);
+                }
+            });
+        }
+        return ret;
+    }
+
     public boolean setBlockMaterial(int x, int y, int z, Material material) {
         int i = this.getSectionIndex(y);
         Material old = getBlockMaterial(x, y, z);
@@ -148,6 +173,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         palette.release();
         return material.equals(getBlockMaterial(x,y,z));
     }
+
     public boolean setBlockData(int x, int y, int z, BlockData state) {
         int i = this.getSectionIndex(y);
         Material old = getBlockMaterial(x, y, z);
@@ -160,6 +186,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         palette.release();
         return material.equals(getBlockMaterial(x,y,z));
     }
+
     public boolean setBlockState(int x, int y, int z, org.bukkit.block.BlockState state) {
         int i = this.getSectionIndex(y);
         Material old = getBlockMaterial(x, y, z);
@@ -172,9 +199,11 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         palette.release();
         return material.equals(getBlockMaterial(x,y,z));
     }
+
     public Material getBlockMaterial(int x, int y, int z) {
         return CraftMagicNumbers.getMaterial(this.states[this.getSectionIndex(y)].get(x, y & 15, z).getBlock());
     }
+
     public void setAllBiome(org.bukkit.block.Biome biome) {
         Biome nmsBiome = CraftBlock.biomeToBiomeBase(registry, biome).value();
         for (int i = 0; i < this.biomes.length; i++) {
@@ -190,6 +219,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
             palette.release();
         }
     }
+
     public boolean setBiome(int x, int y, int z, org.bukkit.block.Biome biome) {
         PalettedContainer<Biome> palette = this.biomes[this.getSectionIndex(y)];
         palette.acquire();
@@ -197,10 +227,12 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         palette.release();
         return getBiome(x, y, z).equals(biome);
     }
+
     public org.bukkit.block.Biome getBiome(int x, int y, int z) {
         PalettedContainer<Biome> biome = this.biomes[this.getSectionIndex(y)];
         return CraftBlock.biomeBaseToBiome(this.registry, biome.get(x >> 2, (y & 15) >> 2, z >> 2));
     }
+
     public boolean containsBiome(NamespacedKey name) {
         Registry<Biome> registry = access.registry(Registry.BIOME_REGISTRY).get();
         for (int i = 0; i < this.biomes.length; i++) {
@@ -212,6 +244,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         }
         return false;
     }
+
     public void setAllNMSBiome(Object biome) {
         assert (biome instanceof Biome);
         for (int i = 0; i < this.biomes.length; i++) {
@@ -227,6 +260,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
             palette.release();
         }
     }
+
     public boolean setNMSBiome(int x, int y, int z, Object biome) {
         assert (biome instanceof Biome);
         PalettedContainer<Biome> palette = this.biomes[this.getSectionIndex(y)];
@@ -235,6 +269,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         palette.release();
         return getNMSBiome(x, y, z).equals(biome);
     }
+
     public Biome getNMSBiome(int x, int y, int z) {
         PalettedContainer<Biome> biome = this.biomes[this.getSectionIndex(y)];
         return biome.get(x >> 2, (y & 15) >> 2, z >> 2);

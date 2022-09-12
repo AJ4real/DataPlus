@@ -214,4 +214,17 @@ public class DataPlusNMSImpl implements DataPlusNMS {
             chunk.setBlockEntityNbt((CompoundTag) toNMS(nbt));
         }
     }
+    public NBTListTag getItemEnchantments(ItemStack item) {
+        return (NBTListTag) fromNMS(CraftItemStack.asNMSCopy(item).getEnchantmentTags());
+    }
+    public NBTCompoundTag getBlockNbt(Location location) {
+        BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return (NBTCompoundTag) fromNMS(NbtUtils.writeBlockState(
+                ((CraftChunk)location.getChunk()).getHandle().getBlockState(pos)));
+    }
+    public NBTCompoundTag getFluidNbt(Location location) {
+        BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return (NBTCompoundTag) fromNMS(NbtUtils.writeFluidState(
+                ((CraftChunk)location.getChunk()).getHandle().getFluidState(pos)));
+    }
 }

@@ -188,10 +188,7 @@ public class DataPlusNMSImpl implements DataPlusNMS {
     }
     public void applyEntityNbt(Entity entity, NBTCompoundTag nbt) {
         Optional<EntityType<?>> op = EntityType.by((CompoundTag) toNMS(nbt));
-        if(!op.isPresent()) {
-            // nbt does not represent a valid entity
-            return;
-        }
+        if(!op.isPresent()) return;
         ((CraftEntity)entity).getHandle().load((CompoundTag) toNMS(nbt));
     }
     public NBTCompoundTag getTileEntityNbt(Location location) {
