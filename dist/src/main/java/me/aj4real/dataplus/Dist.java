@@ -11,6 +11,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Arrays;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Dist extends JavaPlugin {
@@ -24,14 +26,16 @@ public class Dist extends JavaPlugin {
         main.onEnable(this);
     }
     public static DataPlusNMS init(Plugin plugin) {
-        String s = Arrays.stream(Package.getPackages())
-                .map(Package::getName)
-                .filter(n -> n.startsWith("org.bukkit.craftbukkit.v1_"))
-                .collect(Collectors.toList()).stream().findFirst().get()
-                .replace("org.bukkit.craftbukkit.", "").split("\\.")[0];
+        String regex = "\\d+(\\.\\d+)+";
+        String strVer = Bukkit.getVersion();
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(strVer);
+        matcher.find();
+        strVer = 'v' + matcher.group();
         try {
-            plugin.getLogger().log(Level.INFO, Dist.class.getCanonicalName() + ": Attempting to load NMS interface for " + s);
-            DataPlusNMS nms = Version.valueOf(s).nms.newInstance();
+            plugin.getLogger().log(Level.INFO, "Attempting to load NMS interface for " + strVer);
+            Version ver = Version.valueOf(strVer.replace('.', '_'));
+            DataPlusNMS nms = ver.nms.newInstance();
             nms.onEnable(plugin);
             DataPlus.nms = nms;
             if(Bukkit.getPluginManager().isPluginEnabled("Denizen")) {
@@ -39,7 +43,7 @@ public class Dist extends JavaPlugin {
             }
             return nms;
         } catch (Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "Could not initiate support for " + s + ", Is it a supported version?", e);
+            plugin.getLogger().log(Level.SEVERE, "Could not initiate support for " + strVer + ", Is it a supported version?", e);
             Bukkit.getPluginManager().disablePlugin(plugin);
             return null;
         }
@@ -48,10 +52,14 @@ public class Dist extends JavaPlugin {
         main.onDisable(this);
     }
     public enum Version {
-        v1_17_R1(me.aj4real.dataplus.nms.v1_17_R1.DataPlusNMSImpl.class),
-        v1_18_R1(me.aj4real.dataplus.nms.v1_18_R1.DataPlusNMSImpl.class),
-        v1_18_R2(me.aj4real.dataplus.nms.v1_18_R2.DataPlusNMSImpl.class),
-        v1_19_R1(me.aj4real.dataplus.nms.v1_19_R1.DataPlusNMSImpl.class);
+        v1_17(me.aj4real.dataplus.nms.v1_17.DataPlusNMSImpl.class),
+        v1_17_1(me.aj4real.dataplus.nms.v1_17_1.DataPlusNMSImpl.class),
+        v1_18(me.aj4real.dataplus.nms.v1_18.DataPlusNMSImpl.class),
+        v1_18_1(me.aj4real.dataplus.nms.v1_18_1.DataPlusNMSImpl.class),
+        v1_18_2(me.aj4real.dataplus.nms.v1_18_2.DataPlusNMSImpl.class),
+        v1_19(me.aj4real.dataplus.nms.v1_19.DataPlusNMSImpl.class),
+        v1_19_1(me.aj4real.dataplus.nms.v1_19_1.DataPlusNMSImpl.class),
+        v1_19_2(me.aj4real.dataplus.nms.v1_19_2.DataPlusNMSImpl.class);
         private final Class<? extends DataPlusNMS> nms;
         Version(Class<? extends DataPlusNMS> nms) {
             this.nms = nms;
