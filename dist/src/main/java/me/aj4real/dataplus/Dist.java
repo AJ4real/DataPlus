@@ -9,11 +9,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class Dist extends JavaPlugin {
     Dist plugin = null;
@@ -33,7 +31,7 @@ public class Dist extends JavaPlugin {
         matcher.find();
         strVer = 'v' + matcher.group();
         try {
-            plugin.getLogger().log(Level.INFO, "Attempting to load NMS interface for " + strVer);
+            plugin.getLogger().log(Level.INFO, Dist.class.getCanonicalName() + ": Attempting to load NMS interface for " + strVer);
             Version ver = Version.valueOf(strVer.replace('.', '_'));
             DataPlusNMS nms = ver.nms.newInstance();
             nms.onEnable(plugin);
@@ -59,7 +57,8 @@ public class Dist extends JavaPlugin {
         v1_18_2(me.aj4real.dataplus.nms.v1_18_2.DataPlusNMSImpl.class),
         v1_19(me.aj4real.dataplus.nms.v1_19.DataPlusNMSImpl.class),
         v1_19_1(me.aj4real.dataplus.nms.v1_19_1.DataPlusNMSImpl.class),
-        v1_19_2(me.aj4real.dataplus.nms.v1_19_2.DataPlusNMSImpl.class);
+        v1_19_2(me.aj4real.dataplus.nms.v1_19_2.DataPlusNMSImpl.class),
+        v1_19_3(me.aj4real.dataplus.nms.v1_19_3.DataPlusNMSImpl.class);
         private final Class<? extends DataPlusNMS> nms;
         Version(Class<? extends DataPlusNMS> nms) {
             this.nms = nms;

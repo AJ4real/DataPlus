@@ -6,11 +6,10 @@ package me.aj4real.dataplus.api.login;
 
 import me.aj4real.dataplus.api.nbt.NBTCompoundTag;
 import org.bukkit.NamespacedKey;
-import org.bukkit.persistence.PersistentDataType;
 
-import javax.annotation.OverridingMethodsMustInvokeSuper;
-import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class Biome implements Cloneable {
     private NamespacedKey name;
@@ -23,9 +22,13 @@ public class Biome implements Cloneable {
             modParticle = false,
             modSkyColor = false,
             modWaterColor = false,
-            modWaterFogColor = false;
+            modWaterFogColor = false,
+            modPrecipitation = false,
+            modAdditionalSounds = false,
+            modAdditionalSoundTickChance = false,
+            modAmbientSound = false;
 
-    private Biome original;
+    private final Biome original;
 
     //element
     private double temperature, downfall;
@@ -35,9 +38,9 @@ public class Biome implements Cloneable {
     private int skyColor, waterColor, fogColor, waterFogColor;
 
     //mood_sound
-    private Optional<Double> offset = Optional.empty();
+    private Optional<Double> offset = Optional.empty(), additionalSoundTickChance = Optional.empty();
     private Optional<Integer> tickDelay = Optional.empty(), blockSearchExtent = Optional.empty();
-    private Optional<String> sound = Optional.empty();
+    private Optional<String> sound = Optional.empty(), additionalSound = Optional.empty();
 
     //optional
     private Optional<String> temperatureModifier = Optional.empty(), grassColorModifier = Optional.empty(), ambientSound = Optional.empty(), category = Optional.empty();
@@ -82,11 +85,21 @@ public class Biome implements Cloneable {
         } catch (Exception e) {
             this.vanilla = false;
         }
-        if(clone) this.original = this.clone();
+        if (clone) this.original = this.clone();
+        else this.original = null;
     }
 
     public boolean isMod() {
-        return modFogColor || modFoliageColor || modGrassColor || modParticle || modSkyColor || modWaterColor || modWaterFogColor;
+        return modFogColor ||
+                modFoliageColor ||
+                modGrassColor ||
+                modParticle ||
+                modSkyColor ||
+                modWaterColor ||
+                modWaterFogColor ||
+                modAdditionalSounds ||
+                modAdditionalSoundTickChance ||
+                modAmbientSound;
     }
 
     public void setId(int value) {
@@ -110,13 +123,8 @@ public class Biome implements Cloneable {
     }
 
     public void setWaterFogColor(Integer value) {
-        if(value == null) {
-            this.waterFogColor = original.waterFogColor;
-            this.modWaterFogColor = false;
-        } else {
-            this.waterFogColor = value;
-            this.modWaterFogColor = true;
-        }
+        this.waterFogColor = value == null ? original.waterFogColor : value;
+        this.modWaterFogColor = value != null;
     }
 
     public void setWaterFogColor(int r, int g, int b) {
@@ -124,13 +132,8 @@ public class Biome implements Cloneable {
     }
 
     public void setFogColor(Integer value) {
-        if(value == null) {
-            this.fogColor = original.fogColor;
-            this.modFogColor = false;
-        } else {
-            this.fogColor = value;
-            this.modFogColor = true;
-        }
+        this.fogColor = value == null ? original.fogColor : value;
+        this.modFogColor = value != null;
     }
 
     public void setFogColor(int r, int g, int b) {
@@ -138,13 +141,8 @@ public class Biome implements Cloneable {
     }
 
     public void setWaterColor(Integer value) {
-        if(value == null) {
-            this.waterColor = original.waterColor;
-            this.modWaterColor = false;
-        } else {
-            this.waterColor = value;
-            this.modWaterColor = true;
-        }
+        this.waterColor = value == null ? original.waterColor : value;
+        this.modWaterColor = value != null;
     }
 
     public void setWaterColor(int r, int g, int b) {
@@ -152,13 +150,8 @@ public class Biome implements Cloneable {
     }
 
     public void setSkyColor(Integer value) {
-        if(value == null) {
-            this.skyColor = original.skyColor;
-            this.modSkyColor = false;
-        } else {
-            this.skyColor = value;
-            this.modSkyColor = true;
-        }
+        this.skyColor = value == null ? original.skyColor : value;
+        this.modSkyColor = value != null;
     }
 
     public void setSkyColor(int r, int g, int b) {
@@ -170,8 +163,8 @@ public class Biome implements Cloneable {
     }
 
     public void setPrecipitation(String value) {
-        if(value == null) this.precipitation = original.precipitation;
-        else this.precipitation = value;
+        this.precipitation = value == null ? original.precipitation : value;
+        this.modPrecipitation = value != null;
     }
 
     public void setDownfall(Float value) {
@@ -182,12 +175,13 @@ public class Biome implements Cloneable {
         this.temperature = value;
     }
 
-    public void setSound(String value) {
+    public void setMoodSound(String value) {
         this.sound = Optional.ofNullable(value);
     }
 
     public void setAmbientSound(String ambientSound) {
-        this.ambientSound = Optional.ofNullable(ambientSound);
+        this.ambientSound = original.ambientSound.or(() -> Optional.ofNullable(ambientSound));
+        this.modAmbientSound = ambientSound != null;
     }
 
     public void setDownfall(Double downfall) {
@@ -195,13 +189,8 @@ public class Biome implements Cloneable {
     }
 
     public void setFoliageColor(Integer value) {
-        if(value == null) {
-            this.foliageColor = original.foliageColor;
-            this.modFoliageColor = false;
-        } else {
-            this.foliageColor = Optional.of(value);
-            this.modFoliageColor = true;
-        }
+        this.foliageColor = original.foliageColor.or(() -> Optional.ofNullable(value));
+        this.modFoliageColor = value != null;
     }
 
     public void setFoliageColor(int r, int g, int b) {
@@ -209,13 +198,8 @@ public class Biome implements Cloneable {
     }
 
     public void setGrassColor(Integer value) {
-        if(value == null) {
-            this.grassColor = original.grassColor;
-            this.modGrassColor = false;
-        } else {
-            this.grassColor = Optional.of(value);
-            this.modGrassColor = true;
-        }
+        this.grassColor = original.grassColor.or(() -> Optional.ofNullable(value));
+        this.modGrassColor = value != null;
     }
 
     public void setGrassColor(int r, int g, int b) {
@@ -223,16 +207,12 @@ public class Biome implements Cloneable {
     }
 
     public void setGrassColorModifier(String grassColorModifier) {
-        this.grassColorModifier = Optional.ofNullable(grassColorModifier);
+        this.grassColorModifier = original.grassColorModifier.or(() -> Optional.ofNullable(grassColorModifier));
     }
 
     public void setParticle(NBTCompoundTag particle) {
-        this.particle = Optional.ofNullable(particle);
-        if(particle == null) {
-            this.modParticle = false;
-        } else {
-            this.modParticle = true;
-        }
+        this.particle = original.particle.or(() -> Optional.ofNullable(particle));
+        this.modParticle = particle != null;
     }
 
     public void setTemperature(Double temperature) {
@@ -241,6 +221,16 @@ public class Biome implements Cloneable {
 
     public void setTemperatureModifier(String temperatureModifier) {
         this.temperatureModifier = Optional.ofNullable(temperatureModifier);
+    }
+
+    public void setAdditionalSound(String additionalSound) {
+        this.additionalSound = original.additionalSound.or(() -> Optional.ofNullable(additionalSound));
+        this.modAdditionalSounds = additionalSound != null;
+    }
+
+    public void setAdditionalSoundTickChance(Double additionalSoundTickChance) {
+        this.additionalSoundTickChance = original.additionalSoundTickChance.or(() -> Optional.ofNullable(additionalSoundTickChance));
+        this.modAdditionalSoundTickChance = additionalSoundTickChance != null;
     }
 
     public boolean isVanilla() {
@@ -325,6 +315,14 @@ public class Biome implements Cloneable {
 
     public Optional<String> getTemperatureModifier() {
         return temperatureModifier;
+    }
+
+    public Optional<Double> getAdditionalSoundTickChance() {
+        return additionalSoundTickChance;
+    }
+
+    public Optional<String> getAdditionalSound() {
+        return additionalSound;
     }
 
     @Override

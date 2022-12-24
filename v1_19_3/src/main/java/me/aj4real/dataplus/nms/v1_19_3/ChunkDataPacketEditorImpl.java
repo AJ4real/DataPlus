@@ -2,16 +2,20 @@
  Copyright (c) All Rights Reserved
  *********************************/
 
-package me.aj4real.dataplus.nms.v1_18_2;
+package me.aj4real.dataplus.nms.v1_19_3;
 
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import me.aj4real.dataplus.DataPlus;
 import me.aj4real.dataplus.api.ChunkDataPacketEditor;
+import me.aj4real.dataplus.api.nbt.NBTCompoundTag;
 import me.aj4real.dataplus.reflection.ClassAccessor;
 import me.aj4real.dataplus.reflection.ConstructorHandle;
 import me.aj4real.dataplus.reflection.FieldAccessor;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
@@ -23,16 +27,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.PalettedContainer;
 import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_18_R2.CraftChunk;
-import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
-import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockState;
-import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockStates;
-import org.bukkit.craftbukkit.v1_18_R2.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_19_R2.CraftChunk;
+import org.bukkit.craftbukkit.v1_19_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R2.block.CraftBlock;
+import org.bukkit.craftbukkit.v1_19_R2.block.CraftBlockState;
+import org.bukkit.craftbukkit.v1_19_R2.block.CraftBlockStates;
+import org.bukkit.craftbukkit.v1_19_R2.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_19_R2.util.CraftNamespacedKey;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,6 +46,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
     public static final FieldAccessor<byte[]> chunkdataBuffer;
     public static final FieldAccessor<ClientboundLevelChunkPacketData> packetChunkData;
     public static final ConstructorHandle<PalettedContainer> palettedContainer;
+    public static final ClassAccessor<?> blockEntity;
 
     private static final RegistryAccess access;
 
@@ -53,17 +57,19 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         packetChunkData = chunkWithLightPacket.lookupField(ClientboundLevelChunkPacketData.class).get(0);
         palettedContainer = ConstructorHandle.of(Arrays.stream(PalettedContainer.class.getConstructors()).filter((c) -> c.getParameterCount() == 3).findAny().get());
         access = ((CraftServer) Bukkit.getServer()).getHandle().getServer().registryAccess();
+        blockEntity = ClassAccessor.of(ClientboundLevelChunkPacketData.class.getNestMembers()[0]);
     }
 
     private final PalettedContainer<BlockState>[] states;
     private final int[] blockCount;
     private final Registry<Biome> registry;
-    private final PalettedContainer<net.minecraft.world.level.biome.Biome>[] biomes;
+    private final PalettedContainer<Biome>[] biomes;
     private final Chunk control;
     private int chunkX, chunkZ;
     private World world;
     private final ClientboundLevelChunkWithLightPacket original;
     private final int min;
+    private final List<BlockEntity> blockEntities = new ArrayList<>();
 
     public ChunkDataPacketEditorImpl(Chunk chunk) {
         this(chunk.getWorld(), new ClientboundLevelChunkWithLightPacket(((CraftChunk)chunk).getHandle(), ((CraftWorld)chunk.getWorld()).getHandle().getLightEngine(), null, null, true));
@@ -81,17 +87,37 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         this.states = new PalettedContainer[size];
         this.blockCount = new int[size];
         this.biomes = new PalettedContainer[size];
-        this.registry = ((CraftWorld)world).getHandle().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
-        FriendlyByteBuf tmp = packet.getChunkData().getReadBuffer();
+        this.registry = access.registryOrThrow(Registries.BIOME);
+        FriendlyByteBuf palettes = packet.getChunkData().getReadBuffer();
         for (int y = 0; y < size; y++) {
-            short blockCount = tmp.readShort();
+            short blockCount = palettes.readShort();
             this.blockCount[y] = blockCount;
             PalettedContainer<BlockState> states = (PalettedContainer<BlockState>) palettedContainer.invoke(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
-            states.read(tmp);
+            states.read(palettes);
             this.states[y] = states;
-            PalettedContainer<net.minecraft.world.level.biome.Biome> biomes = (PalettedContainer<net.minecraft.world.level.biome.Biome>) palettedContainer.invoke(registry, registry.getOrThrow(Biomes.THE_VOID), PalettedContainer.Strategy.SECTION_BIOMES);
-            biomes.read(tmp);
+            PalettedContainer<Biome> biomes = (PalettedContainer<Biome>) palettedContainer.invoke(registry, registry.getOrThrow(Biomes.THE_VOID), PalettedContainer.Strategy.SECTION_BIOMES);
+            biomes.read(palettes);
             this.biomes[y] = biomes;
+        }
+//        int blockEntityCount = buffer.readVarInt();
+//        System.out.println("count: " + blockEntityCount);
+//        for (int i = 0; i < blockEntityCount; i++) {
+//            BlockEntity entity = new BlockEntity(buffer);
+//            this.blockEntities.add(entity);
+//        }
+    }
+
+    public class BlockEntity extends IBlockEntity {
+        public BlockEntity(FriendlyByteBuf buf) {
+            int packedxz = buf.readByte();
+//            this.x = ((packedxz >> 4) & 15);
+//            this.z = (packedxz & 15);
+            this.x = (packedxz >> 4);
+            this.z = (packedxz);
+            this.y = buf.readShort();
+            System.out.println(x + ", " + y +", " + z);
+            this.type = buf.readVarInt();
+            this.nbt = (NBTCompoundTag) DataPlus.nms.fromNMS(buf.readAnySizeNbt());
         }
     }
 
@@ -165,6 +191,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         palette.release();
         return material.equals(getBlockMaterial(x,y,z));
     }
+
     public boolean setBlockData(int x, int y, int z, BlockData state) {
         int i = this.getSectionIndex(y);
         Material old = getBlockMaterial(x, y, z);
@@ -177,6 +204,7 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         palette.release();
         return material.equals(getBlockMaterial(x,y,z));
     }
+
     public boolean setBlockState(int x, int y, int z, org.bukkit.block.BlockState state) {
         int i = this.getSectionIndex(y);
         Material old = getBlockMaterial(x, y, z);
@@ -189,11 +217,13 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
         palette.release();
         return material.equals(getBlockMaterial(x,y,z));
     }
+
     public Material getBlockMaterial(int x, int y, int z) {
         return CraftMagicNumbers.getMaterial(this.states[this.getSectionIndex(y)].get(x, y & 15, z).getBlock());
     }
+
     public void setAllBiome(org.bukkit.block.Biome biome) {
-        net.minecraft.world.level.biome.Biome nmsBiome = CraftBlock.biomeToBiomeBase(registry, biome).value();
+        Biome nmsBiome = CraftBlock.biomeToBiomeBase(registry, biome).value();
         for (PalettedContainer<Biome> palette : this.biomes) {
             palette.acquire();
             for (int x = 0; x < 4; x++) {
@@ -206,27 +236,31 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
             palette.release();
         }
     }
+
     public boolean setBiome(int x, int y, int z, org.bukkit.block.Biome biome) {
-        PalettedContainer<net.minecraft.world.level.biome.Biome> palette = this.biomes[this.getSectionIndex(y)];
+        PalettedContainer<Biome> palette = this.biomes[this.getSectionIndex(y)];
         palette.acquire();
         palette.set((x & 15) >> 2, (y & 15) >> 2, (z & 15) >> 2, CraftBlock.biomeToBiomeBase(registry, biome).value());
         palette.release();
         return getBiome(x, y, z).equals(biome);
     }
+
     public org.bukkit.block.Biome getBiome(int x, int y, int z) {
-        PalettedContainer<net.minecraft.world.level.biome.Biome> biome = this.biomes[this.getSectionIndex(y)];
+        PalettedContainer<Biome> biome = this.biomes[this.getSectionIndex(y)];
         return CraftBlock.biomeBaseToBiome(this.registry, biome.get(x >> 2, (y & 15) >> 2, z >> 2));
     }
+
     public boolean containsBiome(NamespacedKey name) {
         for (PalettedContainer<Biome> palette : this.biomes) {
             palette.acquire();
-            if (palette.maybeHas((b) -> b == registry.get(CraftNamespacedKey.toMinecraft(name)))) return true;
+            if (palette.maybeHas((b) -> b == this.registry.get(CraftNamespacedKey.toMinecraft(name)))) return true;
             palette.release();
         }
         return false;
     }
+
     public void setAllNMSBiome(Object biome) {
-        assert (biome instanceof net.minecraft.world.level.biome.Biome);
+        assert (biome instanceof Biome);
         for (PalettedContainer<Biome> palette : this.biomes) {
             palette.acquire();
             for (int x = 0; x < 4; x++) {
@@ -239,15 +273,17 @@ public class ChunkDataPacketEditorImpl implements ChunkDataPacketEditor {
             palette.release();
         }
     }
+
     public boolean setNMSBiome(int x, int y, int z, Object biome) {
-        assert (biome instanceof net.minecraft.world.level.biome.Biome);
-        PalettedContainer<net.minecraft.world.level.biome.Biome> palette = this.biomes[this.getSectionIndex(y)];
+        assert (biome instanceof Biome);
+        PalettedContainer<Biome> palette = this.biomes[this.getSectionIndex(y)];
         palette.acquire();
         palette.set((x & 15) >> 2, (y & 15) >> 2, (z & 15) >> 2, (Biome) biome);
         palette.release();
         return getNMSBiome(x, y, z).equals(biome);
     }
-    public net.minecraft.world.level.biome.Biome getNMSBiome(int x, int y, int z) {
+
+    public Biome getNMSBiome(int x, int y, int z) {
         return this.biomes[this.getSectionIndex(y)].get(x >> 2, (y & 15) >> 2, z >> 2);
     }
 

@@ -28,6 +28,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 public class DataPlusNMSImpl implements DataPlusNMS {
@@ -196,21 +197,20 @@ public class DataPlusNMSImpl implements DataPlusNMS {
     }
     public NBTCompoundTag getTileEntityNbt(Location location) {
         LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
-        BlockEntity entity = chunk.getBlockEntity(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        BlockEntity entity = Objects.requireNonNull(chunk.getBlockEntity(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
         if(entity instanceof SpawnerBlockEntity)
             return (NBTCompoundTag) fromNMS(((SpawnerBlockEntity)entity).getSpawner().save(new CompoundTag()));
         return (NBTCompoundTag) fromNMS(entity.saveWithFullMetadata());
     }
     public void putTileEntityNbt(Location location, NBTCompoundTag nbt, boolean clean) {
+        LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
         if(clean) {
-            LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
             BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-            BlockEntity entity = chunk.getBlockEntity(pos);
+            BlockEntity entity = Objects.requireNonNull(chunk.getBlockEntity(pos));
             if(entity instanceof SpawnerBlockEntity)
                 ((SpawnerBlockEntity)entity).getSpawner().load(chunk.getLevel(), pos, (CompoundTag) toNMS(nbt));
             entity.load((CompoundTag) toNMS(nbt));
         } else {
-            LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
             chunk.setBlockEntityNbt((CompoundTag) toNMS(nbt));
         }
     }

@@ -2,7 +2,7 @@
  Copyright (c) All Rights Reserved
  *********************************/
 
-package me.aj4real.dataplus.nms.v1_18;
+package me.aj4real.dataplus.nms.v1_19_3;
 
 import io.netty.buffer.Unpooled;
 import me.aj4real.dataplus.DataPlusNMS;
@@ -10,7 +10,7 @@ import me.aj4real.dataplus.api.ChunkDataPacketEditor;
 import me.aj4real.dataplus.api.FriendlyByteBuf;
 import me.aj4real.dataplus.api.nbt.*;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.RegistrySynchronization;
 import net.minecraft.nbt.*;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.world.entity.EntityType;
@@ -19,19 +19,17 @@ import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_18_R1.CraftChunk;
-import org.bukkit.craftbukkit.v1_18_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_18_R1.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_19_R2.CraftChunk;
+import org.bukkit.craftbukkit.v1_19_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R2.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 public class DataPlusNMSImpl implements DataPlusNMS {
 
     public void onEnable(Plugin plugin) {
@@ -39,7 +37,7 @@ public class DataPlusNMSImpl implements DataPlusNMS {
 
     public NBTCompoundTag getDefaultLoginCodec() {
         net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(Unpooled.buffer());
-        buf.writeWithCodec(RegistryAccess.RegistryHolder.NETWORK_CODEC, ((CraftServer) Bukkit.getServer()).getHandle().getServer().registryHolder);
+        buf.writeWithCodec(RegistrySynchronization.NETWORK_CODEC, ((CraftServer) Bukkit.getServer()).getHandle().getServer().registryAccess());
         return (NBTCompoundTag) fromNMS(buf.readAnySizeNbt());
     }
 
@@ -190,12 +188,10 @@ public class DataPlusNMSImpl implements DataPlusNMS {
     }
     public void applyEntityNbt(Entity entity, NBTCompoundTag nbt) {
         Optional<EntityType<?>> op = EntityType.by((CompoundTag) toNMS(nbt));
-        if(!op.isPresent()) {
-            // nbt does not represent a valid entity
-            return;
-        }
+        if(!op.isPresent()) return;
         ((CraftEntity)entity).getHandle().load((CompoundTag) toNMS(nbt));
     }
+
     public NBTCompoundTag getTileEntityNbt(Location location) {
         LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
         BlockEntity entity = Objects.requireNonNull(chunk.getBlockEntity(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ())));

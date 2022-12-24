@@ -4,9 +4,8 @@
 
 package me.aj4real.dataplus.api.login;
 
-import com.sun.tools.javac.Main;
 import me.aj4real.dataplus.DataPlus;
-import me.aj4real.dataplus.DataPlusNMS;
+import me.aj4real.dataplus.api.Version;
 import me.aj4real.dataplus.api.nbt.NBTCompoundTag;
 import me.aj4real.dataplus.api.nbt.NBTListTag;
 import org.bukkit.NamespacedKey;
@@ -14,7 +13,8 @@ import org.bukkit.NamespacedKey;
 import java.util.*;
 
 public class LoginPacketEditor {
-
+    private static final boolean change1 = !Version.current().isHigherThan(Version.of(1, 19, 3));
+    public static void include() {}
     Map<Integer, Biome> biomesById = new HashMap<>();
     Map<Integer, Dimension> dimensionsById = new HashMap<>();
     Map<NamespacedKey, Biome> biomesByName = new HashMap<>();
@@ -65,19 +65,28 @@ public class LoginPacketEditor {
                     effects.getInt("water_fog_color")
             );
             b.setId(t.getInt("id"));
-            NBTCompoundTag moodSound = effects.getCompound("mood_sound");
-            if(moodSound != null) {
+            if(effects.containsKey("mood_sound")) {
+                NBTCompoundTag moodSound = effects.getCompound("mood_sound");
                 b.setOffset(moodSound.getDouble("offset"));
                 b.setTickDelay(moodSound.getInt("tick_delay"));
                 b.setBlockSearchExtent(moodSound.getInt("block_search_extent"));
-                b.setSound(moodSound.getString("sound"));
+                if(change1) b.setMoodSound(moodSound.getCompound("sound").getString("sound_id"));
+                else b.setMoodSound(moodSound.getString("sound"));
             }
             if (element.containsKey("temperature_modifier"))
                 b.setTemperatureModifier(element.getString("temperature_modifier"));
             if (effects.containsKey("grass_color_modifier"))
                 b.setGrassColorModifier(effects.getString("grass_color_modifier"));
             if (effects.containsKey("grass_color")) b.setGrassColor(effects.getInt("grass_color"));
-            if (effects.containsKey("ambient_sound")) b.setAmbientSound(effects.getString("ambient_sound"));
+            if (effects.containsKey("ambient_sound")) {
+                if(change1) b.setAmbientSound(effects.getCompound("ambient_sound").getString("sound_id"));
+                else b.setAmbientSound(effects.get("ambient_sound").toString());
+            }
+            if (effects.containsKey("additions_sound")) {
+                NBTCompoundTag tag = effects.getCompound("additions_sound");
+                b.setAdditionalSound(tag.getCompound("sound").getString("sound_id"));
+                b.setAdditionalSoundTickChance(tag.getDouble("tick_chance"));
+            }
             if (effects.containsKey("foliage_color")) b.setFoliageColor(effects.getInt("foliage_color"));
             if (effects.containsKey("particle")) b.setParticle(effects.getCompound("particle"));
             if (element.containsKey("category")) b.setCategory(element.getString("category"));
@@ -150,6 +159,26 @@ public class LoginPacketEditor {
                 effects.putString("grass_color_modifier", d.getGrassColorModifier().get());
             if (d.getGrassColor().isPresent()) effects.putInt("grass_color", d.getGrassColor().get());
             if (d.getAmbientSound().isPresent()) effects.putString("ambient_sound", d.getAmbientSound().get());
+            if (d.getAmbientSound().isPresent()) {
+                if(change1) effects.putString("ambient_sound", d.getAmbientSound().get());
+                else {
+                    NBTCompoundTag tag = new NBTCompoundTag();
+                    tag.putString("sound_id", d.getAmbientSound().get());
+                    effects.putCompound("ambient_sound", tag);
+                }
+            }
+            {
+                Optional<Double> tickChance = d.getAdditionalSoundTickChance();
+                Optional<String> sound = d.getAdditionalSound();
+                if(tickChance.isPresent() && sound.isPresent()) {
+                    NBTCompoundTag tag = new NBTCompoundTag();
+                    tag.putDouble("tick_chance", tickChance.get());
+                    NBTCompoundTag s = new NBTCompoundTag();
+                    s.putString("sound_id", sound.get());
+                    tag.putCompound("sound", s);
+                    effects.putCompound("additions_sound", tag);
+                }
+            }
             if (d.getFoliageColor().isPresent()) effects.putInt("foliage_color", d.getFoliageColor().get());
             if (d.getParticle().isPresent()) effects.putCompound("particle", d.getParticle().get());
             effects.putCompound("mood_sound", moodSound);
@@ -165,18 +194,10 @@ public class LoginPacketEditor {
     public void addBiome(Biome biome) {
         biomesById.put(biome.getId(), biome);
         biomesByName.put(biome.getName(), biome);
-//        if(biomesById.containsKey(biome.getId())) throw new Exception("A biome with ID '" + biome.getId() + "' already exists.");
-//        if(biomesByName.containsKey(biome.getName())) throw new Exception("A biome with name '" + biome.getName().toString() + "' already exists.");
-//        throw new UnsupportedOperationException("Not that simple.");
-//        //TODO
     }
     public void addDimension(Dimension dimension) {
         dimensionsById.put(dimension.getId(), dimension);
         dimensionsByName.put(dimension.getName(), dimension);
-//        if(dimensionsById.containsKey(dimension.getId())) throw new Exception("A dimension with ID '" + dimension.getId() + "' already exists.");
-//        if(dimensionsByName.containsKey(dimension.getName())) throw new Exception("A dimension with name '" + dimension.getName().toString() + "' already exists.");
-//        throw new UnsupportedOperationException("Not that simple.");
-//        //TODO
     }
     public Biome getBiomeByName(NamespacedKey name) {
         return biomesByName.get(name);

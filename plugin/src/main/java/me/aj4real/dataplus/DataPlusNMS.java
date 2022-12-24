@@ -32,7 +32,7 @@ public interface DataPlusNMS {
 
     Object toNMS(NBTTag o);
     NBTTag fromNMS(Object o);
-
+    
     NBTCompoundTag getItemNbt(ItemStack item);
     ItemStack getItem(NBTCompoundTag nbt);
 

@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ClassAccessor<T> {
-    private static final Map<Class, ClassAccessor> cache = new HashMap<>();
+    private static final Map<Class<?>, ClassAccessor<?>> cache = new HashMap<>();
     private final Class<T> clazz;
     public ClassAccessor(Class<T> clazz) {
         this.clazz = clazz;
@@ -16,20 +16,21 @@ public class ClassAccessor<T> {
     }
 
     public static <T> ClassAccessor<T> of(Class<T> clazz) {
-        ClassAccessor<T> get = cache.get(clazz);
-        return get != null ? get : new ClassAccessor(clazz);
+        ClassAccessor<T> ret = (ClassAccessor<T>) cache.get(clazz);
+        return ret == null ? new ClassAccessor<>(clazz) : ret;
     }
-
-    public Map<String, Set<MethodHandle>> getMethods() {
+    @SuppressWarnings("unused")
+    public Map<String, Set<MethodHandle<?>>> getMethods() {
         HashSet<Method> fields = new HashSet<>();
         fields.addAll(Lists.newArrayList(clazz.getDeclaredMethods()));
         fields.addAll(Lists.newArrayList(clazz.getMethods()));
-        Map<String, Set<MethodHandle>> ret = new HashMap<>();
+        Map<String, Set<MethodHandle<?>>> ret = new HashMap<>();
         for (Method m : fields) {
             ret.computeIfAbsent(m.getName(), f -> new HashSet<>()).add(MethodHandle.of(m));
         }
         return ret;
     }
+    @SuppressWarnings("unused")
     public Map<String, FieldAccessor> getFields() {
         HashSet<Field> fields = new HashSet<>();
         fields.addAll(Lists.newArrayList(clazz.getDeclaredFields()));
@@ -40,6 +41,7 @@ public class ClassAccessor<T> {
         }
         return ret;
     }
+    @SuppressWarnings("unused")
     public FieldAccessor lookupField(String name) {
         try {
             return FieldAccessor.of(clazz.getDeclaredField(name));
@@ -48,21 +50,21 @@ public class ClassAccessor<T> {
             return null;
         }
     }
+    @SuppressWarnings("unused")
     public List<FieldAccessor> lookupField(Class type, String typeParameter) {
         String finalTypeParameter = type.getCanonicalName() + typeParameter;
-        List<FieldAccessor> fields = Arrays.stream(clazz.getDeclaredFields())
+        return Arrays.stream(clazz.getDeclaredFields())
                 .filter(f -> f.getGenericType().getTypeName().startsWith(finalTypeParameter))
-                .map(f -> FieldAccessor.of(f))
+                .map(FieldAccessor::of)
                 .collect(Collectors.toList());
-        return fields;
     }
     public List<FieldAccessor> lookupField(Class type) {
-        List<FieldAccessor> fields = Arrays.stream(clazz.getDeclaredFields())
+        return Arrays.stream(clazz.getDeclaredFields())
                 .filter(f -> f.getGenericType().getTypeName().startsWith(type.getCanonicalName()))
-                .map(f -> FieldAccessor.of(f))
+                .map(FieldAccessor::of)
                 .collect(Collectors.toList());
-        return fields;
     }
+    @SuppressWarnings("unused")
     public List<FieldAccessor> lookupField(Class type, Class... parameters) {
         String lookfor = type.getCanonicalName();
         if(parameters != null) {
@@ -73,11 +75,10 @@ public class ClassAccessor<T> {
             lookfor = lookfor.substring(0, lookfor.length() - 1) + ">";
         }
         String finalLookfor = lookfor;
-        List<FieldAccessor> fields = Arrays.stream(clazz.getDeclaredFields())
+        return Arrays.stream(clazz.getDeclaredFields())
                 .filter(f -> f.getGenericType().getTypeName().startsWith(finalLookfor))
-                .map(f -> FieldAccessor.of(f))
+                .map(FieldAccessor::of)
                 .collect(Collectors.toList());
-        return fields;
     }
     public String toString() {
         return this.clazz.toString();

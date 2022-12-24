@@ -26,6 +26,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -40,11 +41,11 @@ public class DataPlusNMSImpl implements DataPlusNMS {
         return (NBTCompoundTag) fromNMS(buf.readAnySizeNbt());
     }
 
-    public ChunkDataPacketEditor getChunkDataPacketEditor(org.bukkit.World world, Object packet) {
-        throw new UnsupportedOperationException("Chunk Data Packet Editors are only available on version " + ChunkDataPacketEditor.SupportedVersions.values()[0].name() + " and higher.");
+    public ChunkDataPacketEditor getChunkDataPacketEditor(org.bukkit.World world, Object packet) throws InstantiationException {
+        throw ChunkDataPacketEditor.err;
     }
-    public ChunkDataPacketEditor getChunkDataPacketEditor(org.bukkit.Chunk chunk) {
-        throw new UnsupportedOperationException("Chunk Data Packet Editors are only available on version " + ChunkDataPacketEditor.SupportedVersions.values()[0].name() + " and higher.");
+    public ChunkDataPacketEditor getChunkDataPacketEditor(org.bukkit.Chunk chunk) throws InstantiationException {
+        throw ChunkDataPacketEditor.err;
     }
 
     public void writeNbt(FriendlyByteBuf buf, NBTCompoundTag nbt) {
@@ -196,21 +197,20 @@ public class DataPlusNMSImpl implements DataPlusNMS {
     public NBTCompoundTag getTileEntityNbt(Location location) {
         LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
         BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        BlockEntity entity = chunk.getBlockEntity(pos);
+        BlockEntity entity = Objects.requireNonNull(chunk.getBlockEntity(pos));
         if(entity instanceof SpawnerBlockEntity)
             return (NBTCompoundTag) fromNMS(((SpawnerBlockEntity)entity).getSpawner().save(chunk.getLevel(), pos, new CompoundTag()));
         return (NBTCompoundTag) fromNMS(entity.save(new CompoundTag()));
     }
     public void putTileEntityNbt(Location location, NBTCompoundTag nbt, boolean clean) {
+        LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
         if(clean) {
-            LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
             BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-            BlockEntity entity = chunk.getBlockEntity(pos);
+            BlockEntity entity = Objects.requireNonNull(chunk.getBlockEntity(pos));
             if(entity instanceof SpawnerBlockEntity)
                 ((SpawnerBlockEntity)entity).getSpawner().load(chunk.getLevel(), pos, (CompoundTag) toNMS(nbt));
             entity.load((CompoundTag) toNMS(nbt));
         } else {
-            LevelChunk chunk = ((CraftChunk)location.getChunk()).getHandle();
             chunk.setBlockEntityNbt((CompoundTag) toNMS(nbt));
         }
     }

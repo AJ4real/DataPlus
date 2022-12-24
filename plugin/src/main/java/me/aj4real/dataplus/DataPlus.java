@@ -14,15 +14,13 @@ public class DataPlus {
     public static DataPlusNMS nms;
     public static Plugin plugin;
     public void onLoad(Plugin plugin) {
-        this.plugin = plugin;
+        DataPlus.plugin = plugin;
     }
     public void onEnable(Plugin plugin) {
-        try {
-            new JSONSerializer(); // Include
-            new YAMLSerializer(); // Include
-            ChunkDataPacketEditor.newInstance(null); // Include
-            new LoginPacketEditor(null); // Include
-        } catch (Exception e) {}
+        new JSONSerializer(); // Include
+        new YAMLSerializer(); // Include
+        ChunkDataPacketEditor.include(); // Include
+        LoginPacketEditor.include(); // Include
     }
     public void onDisable(Plugin plugin) {
     }
