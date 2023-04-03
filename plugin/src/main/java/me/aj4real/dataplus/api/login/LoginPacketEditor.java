@@ -14,12 +14,13 @@ import java.util.*;
 
 public class LoginPacketEditor {
     private static final boolean change1 = !Version.current().isHigherThan(Version.of(1, 19, 3));
+    private static final boolean change2 = !Version.current().isHigherThan(Version.of(1, 19, 4));
     public static void include() {}
     Map<Integer, Biome> biomesById = new HashMap<>();
     Map<Integer, Dimension> dimensionsById = new HashMap<>();
     Map<NamespacedKey, Biome> biomesByName = new HashMap<>();
     Map<NamespacedKey, Dimension> dimensionsByName = new HashMap<>();
-    NBTCompoundTag chat = null;
+    Map<String, NBTCompoundTag> extras = new HashMap<>();
 
     public LoginPacketEditor() {
         this(DataPlus.nms.getDefaultLoginCodec());
@@ -58,7 +59,7 @@ public class LoginPacketEditor {
                     NamespacedKey.fromString(t.getString("name")),
                     element.getFloat("temperature"),
                     element.getFloat("downfall"),
-                    element.getString("precipitation"),
+                    element.containsKey("precipitation") ? element.getString("precipitation") : "NONE",
                     effects.getInt("sky_color"),
                     effects.getInt("water_color"),
                     effects.getInt("fog_color"),
@@ -84,7 +85,8 @@ public class LoginPacketEditor {
             }
             if (effects.containsKey("additions_sound")) {
                 NBTCompoundTag tag = effects.getCompound("additions_sound");
-                b.setAdditionalSound(tag.getCompound("sound").getString("sound_id"));
+                if(change2) b.setAdditionalSound(tag.getString("sound"));
+                else b.setAdditionalSound(tag.getCompound("sound").getString("sound_id"));
                 b.setAdditionalSoundTickChance(tag.getDouble("tick_chance"));
             }
             if (effects.containsKey("foliage_color")) b.setFoliageColor(effects.getInt("foliage_color"));
@@ -93,7 +95,11 @@ public class LoginPacketEditor {
             biomesById.put(b.getId(), b);
             biomesByName.put(b.getName(), b);
         });
-        if(nbt.containsKey("minecraft:chat_type")) this.chat = nbt.getCompound("minecraft:chat_type");
+        for (String s : nbt.keySet()) {
+            if(!s.equalsIgnoreCase("minecraft:worldgen/biome") && !s.equalsIgnoreCase("minecraft:dimension_type")) {
+                extras.put(s, nbt.getCompound(s));
+            }
+        }
     }
     public NBTCompoundTag build() {
         NBTCompoundTag ret = new NBTCompoundTag();
@@ -137,7 +143,8 @@ public class LoginPacketEditor {
             ret2.putString("name", d.getName().toString());
             ret2.putInt("id", d.getId());
             NBTCompoundTag element = new NBTCompoundTag();
-            element.putString("precipitation", d.getPrecipitation().toLowerCase());
+            if(change2) element.putBoolean("has_precipitation", !d.getPrecipitation().equalsIgnoreCase("NONE"));
+            else element.putString("precipitation", d.getPrecipitation().toLowerCase());
             element.putFloat("temperature", (float) d.getTemperature());
             element.putFloat("downfall", (float) d.getDownfall());
             NBTCompoundTag effects = new NBTCompoundTag();
@@ -188,7 +195,7 @@ public class LoginPacketEditor {
         });
         biomes.putList("value", biomeList);
         ret.putCompound("minecraft:worldgen/biome", biomes);
-        if(this.chat != null) ret.putCompound("minecraft:chat_type", this.chat);
+        ret.putAll(extras);
         return ret;
     }
     public void addBiome(Biome biome) {

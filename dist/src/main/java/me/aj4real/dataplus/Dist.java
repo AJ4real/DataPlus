@@ -58,7 +58,8 @@ public class Dist extends JavaPlugin {
         v1_19(me.aj4real.dataplus.nms.v1_19.DataPlusNMSImpl.class),
         v1_19_1(me.aj4real.dataplus.nms.v1_19_1.DataPlusNMSImpl.class),
         v1_19_2(me.aj4real.dataplus.nms.v1_19_2.DataPlusNMSImpl.class),
-        v1_19_3(me.aj4real.dataplus.nms.v1_19_3.DataPlusNMSImpl.class);
+        v1_19_3(me.aj4real.dataplus.nms.v1_19_3.DataPlusNMSImpl.class),
+        v1_19_4(me.aj4real.dataplus.nms.v1_19_4.DataPlusNMSImpl.class);
         private final Class<? extends DataPlusNMS> nms;
         Version(Class<? extends DataPlusNMS> nms) {
             this.nms = nms;
